@@ -11,6 +11,7 @@
 - Applicant: can apply for job offers and accept if successful 
 - Organizers: can post job offers and review applications
 - Owner: can add and remove people from organizing team
+
 **Function**:
 - called by event organizers to create/post a new job
 - provide all details a job requires
