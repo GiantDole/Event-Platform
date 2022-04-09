@@ -1,12 +1,12 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import "../libraries/Ownable.sol";
+import "./OrganizationManager.sol";
 
 
 ///@title Collection and creation of all job postings
 
-contract JobFactory is Ownable{
+contract JobFactory is OrganizationManager{
 
     event JobPosted(uint id);
 
