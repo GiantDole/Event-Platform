@@ -15,8 +15,12 @@ contract OrganizationManager is Ownable {
     event OrganizerAdded(address indexed organizer);
     event OrganizerRemoved(address indexed organizer);
 
+    /**
+     * @dev organizer is already transferred through the constructor of Ownable
+     *      and the overwritten function _transferOwnership
+     */
     constructor() {
-        _addOrganizer(msg.sender);
+        //_addOrganizer(msg.sender);
     }
 
     //So far no possibility to view all organizers
@@ -29,6 +33,10 @@ contract OrganizationManager is Ownable {
         _;
     }
 
+    function isOrganizer(address _organizer) public view returns(bool) {
+        return _organizers[_organizer] == 1 ? true : false;
+    }
+
 
     /**
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
@@ -37,9 +45,9 @@ contract OrganizationManager is Ownable {
      * What happens if we call the public transferOwnership function in Ownable?
      * Will this method be used?
      */
-    function _transferOwnership(address newOwner) internal override {
-        Ownable._transferOwnership(newOwner);
-        _addOrganizer(newOwner);
+    function _transferOwnership(address _newOwner) internal override {
+        Ownable._transferOwnership(_newOwner);
+        _addOrganizer(_newOwner);
     }
 
     function _addOrganizer(address _organizer) internal {
