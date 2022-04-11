@@ -9,6 +9,8 @@ contract OrganizationManager is Ownable {
     //ddress[] private _organizers;
     /**
      * @dev if address maps to 1 that address is an organizer
+     *      if it maps to 0 (standard mapping) that address is not an organizer
+     *    
      */
     mapping(address => uint) _organizers;
 
@@ -18,6 +20,7 @@ contract OrganizationManager is Ownable {
     /**
      * @dev organizer is already transferred through the constructor of Ownable
      *      and the overwritten function _transferOwnership
+     *      the implementation makes sure that the owner is also always an organizer
      */
     constructor() {
         //_addOrganizer(msg.sender);

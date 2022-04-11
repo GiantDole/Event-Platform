@@ -46,6 +46,29 @@ contract("OrganizationManager", (accounts) => {
         })
     })
 
+    context("removing organizers", async () => {
+        it("should successfully remove an organizer: called by owner", async() => {
+            await contractInstance.addOrganizer(organizer, {from: owner});
+            assert.equal(await contractInstance.isOrganizer(organizer), true);
+            await contractInstance.removeOrganizer(organizer, {from: owner});
+            assert.equal(await contractInstance.isOrganizer(organizer), false);
+        })
 
+        it("should not remove organizer: not called by owner", async() => {
+            await contractInstance.addOrganizer(organizer, {from: owner});
+            await contractInstance.addOrganizer(other, {from: owner});
+            assert.equal(await contractInstance.isOrganizer(organizer), true);
+            assert.equal(await contractInstance.isOrganizer(other), true);
+            await utils.shouldThrow(contractInstance.removeOrganizer(organizer, {from: other}));
+        })
+
+        it("should not remove organizer: is owner", async() => {
+            await contractInstance.addOrganizer(organizer, {from: owner});
+            await contractInstance.addOrganizer(other, {from: owner});
+            assert.equal(await contractInstance.isOrganizer(organizer), true);
+            assert.equal(await contractInstance.isOrganizer(other), true);
+            await utils.shouldThrow(contractInstance.removeOrganizer(owner, {from: owner}));
+        })
+    })
 
 })
