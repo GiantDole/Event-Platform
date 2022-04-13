@@ -24,41 +24,41 @@
 **Description**: platform for stakeholders of the event to vote on certain decisions. The voting managers can publish votings and all registered stakeholders can take a vote with different weights. The results of all votings are transparently retrievable.
 
 **Ideas**: 
-    - another type of organizer: e.g. voting manager
-    - can post votings related to a decision to make
-    - stakeholders can vote only once
-    - stakeholders can change their vote
-    - stakeholders can request additional options (on what communication medium? through smart contract?)
-    - voting managers can add new options
-    - owner can change an option (shouldn't usually happen)
-    - review result statistics
-    - publish result
-    - explanations shouldn't be stored on the blockchain: maybe only the hash of a message to verify integrity?
-    - different voting weights depending on sponsor type
-    - implement deadline
-    - organize and extract all votings in an event
+- another type of organizer: e.g. voting manager
+- can post votings related to a decision to make
+- stakeholders can vote only once
+- stakeholders can change their vote
+- stakeholders can request additional options (on what communication medium? through smart contract?)
+- voting managers can add new options
+- owner can change an option (shouldn't usually happen)
+- review result statistics
+- publish result
+- explanations shouldn't be stored on the blockchain: maybe only the hash of a message to verify integrity?
+- different voting weights depending on sponsor type
+- implement deadline
+- organize and extract all votings in an event
 
 # Application System
 **Description** platform for funders and projects to apply to the event. Therefore, there are two different subclasses of applications differing in the provided information, "profile", and review process. 
 
 **Ideas**:
-    - profile per applicant?
-    - Project application:
-        - has a deadline (can be changed by owner)
-        - has one responsible team lead address
-        - ?(team lead can add team member addresses)
-        - different categorys to choose from
-        - organizers can set these categories
-        - categories are publicly viewable
-        - every team requires github url, team size, categories
-        - review commitee can rank each project in different rankings (anonym)
-        - different reviewers can have different voting weights
-        - owner can add ranking categories until review phase started
-        - total ranking is released after some time (not viewable )
-        - deadline for reviewing can be set by owner 
-        - ranking will be released 1 day after the deadline was set; owner can change deadline during this time
-        - deadline has to be at least 1 day after the current day
-    - Funder registration:
-        -
-        -
+- profile per applicant?
+- Project application:
+    - has a deadline (can be changed by owner)
+    - has one responsible team lead address
+    - ?(team lead can add team member addresses)
+    - different categorys to choose from
+    - organizers can set these categories
+    - categories are publicly viewable
+    - every team requires github url, team size, categories
+    - review commitee can rank each project in different rankings (anonym)
+    - different reviewers can have different voting weights
+    - owner can add ranking categories until review phase started
+    - total ranking is released after some time (not viewable )
+    - deadline for reviewing can be set by owner 
+    - ranking will be released 1 day after the deadline was set; owner can change deadline during this time
+    - deadline has to be at least 1 day after the current day
+- Funder registration:
+    -
+    -
 
