@@ -6,6 +6,10 @@
 - *JobApplication*: provides functionality to apply for jobs
 - *JobReview*: offers functionality to review applicants and accept/deny
 
+**Ideas**:
+- function to auto create a bill for freelancers (law?)
+- multisig for job completion
+- request job progress acknowledgment to lock reward
 ### JobFactory
 **Users**: 
 - Applicant: can apply for job offers and accept if successful 
@@ -59,6 +63,8 @@
     - ranking will be released 1 day after the deadline was set; owner can change deadline during this time
     - deadline has to be at least 1 day after the current day
 - Funder registration:
-    -
-    -
+    - variables: funding, link to contract pdf, contract hash?
+    - need to lock in funding until a certain deadline (or be accepted by the owner?)
+    - can select categories they wish to sponsor
+- can funders be linked to the projects somehow later on to ensure funding?
 
