@@ -43,7 +43,7 @@
 - organize and extract all votings in an event
 
 # Application System
-**Description** platform for funders and projects to apply to the event. Therefore, there are two different subclasses of applications differing in the provided information, "profile", and review process. 
+**Description** platform for projects to apply to the event. Manages the state of an application throughout the review process. Makes sure that the review is not publicly visible. Jurors will be assigned for each phase of the review process and submit their voting.
 
 **Ideas**:
 - profile per applicant?
@@ -62,9 +62,13 @@
     - deadline for reviewing can be set by owner 
     - ranking will be released 1 day after the deadline was set; owner can change deadline during this time
     - deadline has to be at least 1 day after the current day
-- Funder registration:
-    - variables: funding, link to contract pdf, contract hash?
-    - need to lock in funding until a certain deadline (or be accepted by the owner?)
-    - can select categories they wish to sponsor
-- can funders be linked to the projects somehow later on to ensure funding?
+- Project Review:
+    - project goes through review phases
+    - in each phase: different set of jurors assigned to review a project
+    - each juror will submit voting in ceratin categories
+    - projects move forward according to a hardcap set by owner (either absolute or relative number of projects)
+    - the voting should be anonymized and only visible to certain parties: to jurors, organizers, investors, and the project itself
+    - only organizers should be able to review a ranking; ranking per category is anonymous to everyone else
+    - which phase a project is in should be visible to everyone
+
 
