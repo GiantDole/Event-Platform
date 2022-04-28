@@ -6,7 +6,7 @@ import "./OrganizationManager.sol";
 
 ///@title Collection and creation of all job postings
 
-contract JobFactory is OrganizationManager{
+contract JobFactory is OrganizationManager{ // also probably is Payable or whatever our payments contract is
 
     event JobPosted(uint id);
     event ApplicationCompleted();
@@ -20,6 +20,7 @@ contract JobFactory is OrganizationManager{
     ///@dev so far a job can have at max 255 hours 
     struct Job {
         string name;
+        string desc; // description of job
         uint64 id; //id will be given through index in array -- tbd but we may not actually need this in the job
         uint64 budget; //in wei?
         uint8 time; //time to complete the job in hours
@@ -30,13 +31,17 @@ contract JobFactory is OrganizationManager{
     uint64 private idCount;
 
     Job[] public jobs;
+    
+    uint64[] completedJobs;
+    uint64[] ongoingJobs;
+    uint64[] unassignedJobs;
 
     mapping(uint64=>address[]) internal applicants; //maps job id to applicants for the job
     mapping(uint64=>address) internal approved; //maps job id to approved applicant
     mapping(uint64=>address) internal assignment; //maps job id to assignee
 
-    mapping (address => uint64[]) ownerJobs
-    mapping (address => uint64[]) workerJobs
+    mapping (address => uint64[]) ownerJobs;
+    mapping (address => uint64[]) workerJobs;
 
     constructor() {
        idCount = 0;
@@ -47,7 +52,7 @@ contract JobFactory is OrganizationManager{
     }
 
     ///@notice checks that owner is good for budget and witholds the budget
-    function _withholdBudget() internal {
+    function _withholdBudget() internal { // this may end up being done completely in the PaymentSplitter?
     }
 
     ///@notice creates a new job posting
@@ -80,7 +85,7 @@ contract JobFactory is OrganizationManager{
 
     ///@notice accept job assignment
     ///@dev jobs can only be accepted by approved applicants -- maybe implement via modifier.
-    function acceptAssignment() public { 
+    function acceptAssignment(uint64 _id) public { 
         emit JobAssigned();
     }
 
