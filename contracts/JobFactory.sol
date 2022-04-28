@@ -43,6 +43,16 @@ contract JobFactory is OrganizationManager{ // also probably is Payable or whate
     mapping (address => uint64[]) ownerJobs;
     mapping (address => uint64[]) workerJobs;
 
+    modifier onlyAssignee(_id) {
+        require(assignment[_id] == msg.sender, "Callable: caller is not the job assignee");
+        _;
+    }
+
+    modifier onlyApproved(_id) {
+        require(approved[_id] == msg.sender, "Callable: caller's application has not been approved");
+        _;
+    }
+
     constructor() {
        idCount = 0;
     }
@@ -61,6 +71,7 @@ contract JobFactory is OrganizationManager{ // also probably is Payable or whate
     function createJob(string memory _name, uint64 _budget, uint8 _time) public onlyOwner() {
         idCount++;
         jobs.push(Job(_name, idCount, _budget, _time, 0, false));
+        ownerJobs[msg.sender].push(idCount);
         // call withholdBudget here
         emit JobPosted(jobs.length-1);
     }
@@ -72,20 +83,22 @@ contract JobFactory is OrganizationManager{ // also probably is Payable or whate
     }
 
     ///@notice apply to accept a job
-    function viewApplicants(uint64 _id) public view onlyOwner() returns (address[] _applicants) {
+    function viewApplicants(uint64 _id) public view onlyOrganizer() returns (address[] _applicants) {
         return applicants[_id];
     }
 
     //@notice accept job Applicant
-    function acceptApplicant(uint64 _id, address _applicant) public onlyOwner() {
+    function acceptApplicant(uint64 _id, address _applicant) public onlyOrganizer() {
         // TO CODE: require( _applicant in applicants[_id])
-        approved[_id] = _applicant
+        approved[_id] = _applicant;
         emit ApplicantAccepted();
     }
 
     ///@notice accept job assignment
     ///@dev jobs can only be accepted by approved applicants -- maybe implement via modifier.
-    function acceptAssignment(uint64 _id) public { 
+    function acceptAssignment(uint64 _id) public onlyApproved(_id) { 
+        assignment[_id] = msg.sender;
+        workerJobs[msg.sender].push(_id);
         emit JobAssigned();
     }
 
