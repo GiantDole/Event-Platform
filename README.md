@@ -41,6 +41,7 @@
 - different voting weights depending on sponsor type
 - implement deadline
 - organize and extract all votings in an event
+- organizing team can lock money for the voters that can exclusively be used to vote
 
 # Application System
 **Description** platform for projects to apply to the event. Manages the state of an application throughout the review process. Makes sure that the review is not publicly visible. Jurors will be assigned for each phase of the review process and submit their voting.
@@ -70,5 +71,6 @@
     - the voting should be anonymized and only visible to certain parties: to jurors, organizers, investors, and the project itself
     - only organizers should be able to review a ranking; ranking per category is anonymous to everyone else
     - which phase a project is in should be visible to everyone
+    - create a new Voting for every project, for every juror, or for every phase? How is voting contract structured?
 
 
