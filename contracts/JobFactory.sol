@@ -9,10 +9,10 @@ import "./OrganizationManager.sol";
 contract JobFactory is OrganizationManager{ // also probably is Payable or whatever our payments contract is
 
     event JobPosted(uint id);
-    event ApplicationCompleted();
-    event ApplicationWithdrawn();
-    event ApplicantAccepted();
-    event JobAssigned();
+    event ApplicationCompleted(uint jobId, address applicant);
+    event ApplicationWithdrawn(uint jobId, address applicant);
+    event ApplicantAccepted(uint jobId, address applicant);
+    event JobAssigned(uint jobId, address assignee);
     event ProgressUpdated();
     event ProgressApproved();
     event JobCompleted();
@@ -32,74 +32,100 @@ contract JobFactory is OrganizationManager{ // also probably is Payable or whate
 
     Job[] public jobs;
     
-    uint64[] completedJobs;
-    uint64[] ongoingJobs;
-    uint64[] unassignedJobs;
+    // I don't actually think the below are needed -- use mappings to bool instead as we can loop through jobs array in a public view function that doesn't require gas.
+    // uint64[] completedJobs; // array to store past jobs that are already completed (e.g. for tax purposes, etc.)
+    // uint64[] ongoingJobs; // array to store ongoing jobs that are currently assigned
+    // uint64[] unassignedJobs; // array to store posted jobs that are unassigned, i.e. in need of assignment
+    // uint64[] assignedJobs; // array to store posted jobs that are unassigned, i.e. in need of assignment
 
-    mapping(uint64=>address[]) internal applicants; //maps job id to applicants for the job
-    mapping(uint64=>address) internal approved; //maps job id to approved applicant
-    mapping(uint64=>address) internal assignment; //maps job id to assignee
+    mapping(uint64=>bool) isAssigned;
+    mapping(uint64=>bool) isComplete;
+    mapping(uint64=>address[]) internal applicants; // maps job id to applicants for the job
+    mapping(bytes32=>bool) internal isApplicant; // maps hash of job id and applicant address to boolean indicating whether the address corresponds to an applicant for the job
+    mapping(uint64=>address) internal approved; // maps job id to a SINGLE approved applicant
+    mapping(uint64=>address) internal assignment; // maps job id to a SINGLE assignee
 
-    mapping (address => uint64[]) ownerJobs;
-    mapping (address => uint64[]) workerJobs;
+    mapping (address => uint64[]) organizerJobs; // maps organizer address to jobs that they are an organizer of
+    mapping (address => uint64[]) workerJobs; // maps worker address to jobs that they are/were assigned to
 
+    ///@notice only allow the job assignee to call the function
     modifier onlyAssignee(_id) {
         require(assignment[_id] == msg.sender, "Callable: caller is not the job assignee");
         _;
     }
 
+    ///@notice only allow an approved applicant to call the function
     modifier onlyApproved(_id) {
         require(approved[_id] == msg.sender, "Callable: caller's application has not been approved");
         _;
     }
 
+    ///@notice constructor to instantiate the contract
+    ///@dev for now, all we have to do is set idCount to 0
     constructor() {
        idCount = 0;
     }
 
-    ///@dev internal function creating jobs for potential calls in other places
+    /* TO DO */
+    ///@notice internal function creating jobs for potential calls in other places
+    ///@dev may not need in the end 
     function _createJob() internal {
     }
 
+    /* TO DO */
     ///@notice checks that owner is good for budget and witholds the budget
-    function _withholdBudget() internal { // this may end up being done completely in the PaymentSplitter?
+    ///@dev this may end up being done completely in the PaymentSplitter?
+    function _withholdBudget() internal { 
     }
 
     ///@notice creates a new job posting
-    ///@dev jobs can only be created by the owner
+    ///@dev jobs can only be created by an organizer
     ///@dev incrementing idCount depends on overflow protection; only use with Solidity verions >0.8!
-    function createJob(string memory _name, uint64 _budget, uint8 _time) public onlyOwner() {
+    function createJob(string memory _name, uint64 _budget, uint8 _time) public onlyOrganizer() {
         idCount++;
         jobs.push(Job(_name, idCount, _budget, _time, 0, false));
-        ownerJobs[msg.sender].push(idCount);
+        organizerJobs[msg.sender].push(idCount);
         // call withholdBudget here
         emit JobPosted(jobs.length-1);
     }
 
-    ///@notice apply to accept a job
-    function applyToJob(uint64 _id) public {
-        applicants[_id] = msg.sender
-        emit ApplicationCompleted();
+    ///@notice view ALL job postings, past and present
+    function viewAllPostings() public view returns(Job[] jobs){
+        return jobs;
+    }
+
+    ///@notice view open postings that have not been assigned yet
+    function viewOpenPostings() public view returns(Job[] jobs){
+        for job in 
     }
 
     ///@notice apply to accept a job
+    function applyToJob(uint64 _id) public {
+        applicants[_id] = msg.sender;
+        keccak256(abi.encode(_id, msg.sender))] == 1
+        emit ApplicationCompleted(_id, msg.sender);
+    }
+
+    ///@notice view applicants for a job
+    ///@dev only an organizer of the job can do so
+    ///@dev public view function -- no gas needed
     function viewApplicants(uint64 _id) public view onlyOrganizer() returns (address[] _applicants) {
         return applicants[_id];
     }
 
     //@notice accept job Applicant
     function acceptApplicant(uint64 _id, address _applicant) public onlyOrganizer() {
-        // TO CODE: require( _applicant in applicants[_id])
+        require(isApplicant[keccak256(abi.encode(_id, _applicant))] == 1, "Callable: input address is not an existing applicant and therefore cannot be accepted.");
         approved[_id] = _applicant;
-        emit ApplicantAccepted();
+        emit ApplicantAccepted(_id, _applicant);
     }
 
     ///@notice accept job assignment
-    ///@dev jobs can only be accepted by approved applicants -- maybe implement via modifier.
+    ///@dev jobs can only be accepted by approved applicants
     function acceptAssignment(uint64 _id) public onlyApproved(_id) { 
         assignment[_id] = msg.sender;
         workerJobs[msg.sender].push(_id);
-        emit JobAssigned();
+        emit JobAssigned(_id, msg.sender);
     }
 
 }
