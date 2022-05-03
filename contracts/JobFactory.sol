@@ -95,8 +95,8 @@ contract JobFactory is OrganizationManager{ // also probably is Payable or whate
     }
 
     ///@notice view open postings that have not been assigned yet
-    function viewOpenPostings() public view returns(Job[] jobs){
-        for job in 
+    function viewOpenPostings() public view returns(Job[] unassigned_jobs){
+        //for job in 
     }
 
     ///@notice apply to accept a job
