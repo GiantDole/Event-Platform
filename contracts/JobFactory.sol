@@ -38,13 +38,18 @@ contract JobFactory is OrganizationManager{ // also probably is Payable or whate
     // uint64[] unassignedJobs; // array to store posted jobs that are unassigned, i.e. in need of assignment
     // uint64[] assignedJobs; // array to store posted jobs that are unassigned, i.e. in need of assignment
 
+    // @Adrian: can't these information be held by a job contract? As we create them anyway that might be more memory efficient
     mapping(uint64=>bool) isAssigned;
     mapping(uint64=>bool) isComplete;
+    // @Adrian: mapping to an array... hopefully we keep track of the applicant id!
     mapping(uint64=>address[]) internal applicants; // maps job id to applicants for the job
+    // @Adrian: why does job id have bytes32 and then uint64 format?
     mapping(bytes32=>bool) internal isApplicant; // maps hash of job id and applicant address to boolean indicating whether the address corresponds to an applicant for the job
+    // @Adrian: probably again a mapping for the job contract?
     mapping(uint64=>address) internal approved; // maps job id to a SINGLE approved applicant
     mapping(uint64=>address) internal assignment; // maps job id to a SINGLE assignee
 
+    // @Adrian: this belongs here; managing jobs!
     mapping (address => uint64[]) organizerJobs; // maps organizer address to jobs that they are an organizer of
     mapping (address => uint64[]) workerJobs; // maps worker address to jobs that they are/were assigned to
 
@@ -63,6 +68,7 @@ contract JobFactory is OrganizationManager{ // also probably is Payable or whate
     ///@notice constructor to instantiate the contract
     ///@dev for now, all we have to do is set idCount to 0
     constructor() {
+        // @Adrian: wouldn't id be implicitly managed through array position?
        idCount = 0;
     }
 
