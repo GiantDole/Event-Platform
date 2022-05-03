@@ -10,20 +10,47 @@
  * function.
  */
 
-contract Payment {
+// @Adrian: import OrganizationManager
+import "./OrganizationManager.sol";
+// @Adrian: TODO; import Job
+contract Payment is OrganizationManager{
     event PaymentReceived(address from, uint256 amount);
     event PaymentReleased(address to, uint256 amount);
 
     //Will check later the view part of the variables and the reduncies of few varibales
+    // @Adrian: JobID is known because payment inherits Job
     uint64 public jobID;
     address public contractoraddress;
+    // @Adrian: Isn't budget equal to the balance locked in this smart contract?
     uint64 public budget;
     uint8 public percentCompleted;
+    // @Adrian: adding units
+    //          remove percentcompleted
+    //          add functionality for units
+    //          !! dont't forget units: contractors need to create invoice
+    uint8 public unitsCompleted;
+    uint8 public unitsWithdrawn;
+
     bool public completed;
+    // @Adrian: Instead of percentCompleted: unit counter & paymentperunit
+    //          Have a unit counter that captures completed work
+    //          Units can be requested by contractor and confirmed by organizer
+    //          If contractor wished to withdraw funds, they can withdraw completed units * paymentperunit
+    //          Maybe two variables: unitsWithdrawn and unitsCompleted
+    //          --> we can differ between units that have been worked and accepted by organizers and units that have been withdrawn already
+    //          
+
+    // @Adrian: Missing functionality:
+    //          add budget to this job
+    //          implement units and requesting units + accepting units
+    //          create invoice
+    //          change paymentperunit
+
 
     ///@notice creates a new instance of Payment
     ///@dev jobs can only be created by the owner
 
+    // @Adrian: require that budget is at least e.g. 3 units * paymentperunit
     constructor(
         uint64 _jobID,
         address _contractoraddress,
@@ -54,6 +81,7 @@ contract Payment {
     /**
      * @dev Getter for the progress for the job
      */
+     // @Adrian: adapt for completed units
     function getprogress() public view returns (uint8) {
         return percentCompleted;
     }
@@ -61,6 +89,7 @@ contract Payment {
     /**
      * @dev Getter for the completion of the job
      */
+     // @Adrian: we can leave a potential completed flag - rarely used though
     function iscompleted() public view returns (bool) {
         return percentCompleted == 1 ? true : false;
     }
@@ -75,6 +104,7 @@ contract Payment {
     /**
      * @dev Function for contractor to withdraw assets if the job has been fulfilled
      */
+     // @Adrian: adapt: either completed or just withdraw commited units.
     function _withdraw() public {
         require(
             msg.sender == contractoraddress,
