@@ -1,6 +1,17 @@
 pragma solidity >=0.7.0 <0.9.0 ;
 
-contract Ballot{
+import "./JurorManager.sol";
+
+// @Adrian: created JurorManager contract that will be inherited here
+//          every Juror is of a certain category
+//          each ballot has a certain category assigned and only jurors of that category can vote (that are also assigned this ballot)
+//          
+//          this ballot is NOT an organizer; this ballot only knows the following:
+//          it is assigned to a project; it knows its project details
+//          it knows which reviewing phase we are in
+//          the category a juror is assigned to is the reviewing phase; dependent on the reviewing phase we can require that only those jurors can vote
+//          a voting organizer assigns the jurors of this category/reviewing phase to vote on this project in 5 categories
+contract Ballot is JurorManager{
 
     //Variables 
 
@@ -8,6 +19,7 @@ contract Ballot{
     enum State {Created, Voting, Ended}         // state variable for the system
     State public state ;
 
+    // @Adrian: we would have to set a categoryrating for every juror? although the categories are fixed per ballot?
     struct rating{
         address jurorAddress;  // address of the voter
         mapping(bytes32 => uint) categoryRatings ;   // ratings of the voter by each category 
@@ -15,7 +27,7 @@ contract Ballot{
 
     /* juror profile */
     struct juror {
-        uint jurorId                               
+        uint jurorId;                    
         address jurorAddress ;  
     // string jurorName ;           // need to decide how to get this thing. Code is created with the assumption that only juror addresses are passed while creating an instance              
         bool rated ;            
@@ -25,7 +37,7 @@ contract Ballot{
 
     /* proposal profile */
     struct proposal {
-        uint proposalId
+        uint proposalId;
         bytes32 proposalName ;                               // name of the proposal 
         mapping(bytes32 => uint) aggregateRatings ;  // aggregate rating of the propsal in each cateogory
     }
@@ -76,6 +88,7 @@ contract Ballot{
         
     }   
 
+    // @Adrian: There is a for loop in this function... avoidable?
     function addProposal(bytes32 memory _proposalName )                  // adding a proposal
         public 
         inState(State.Created)
