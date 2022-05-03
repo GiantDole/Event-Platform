@@ -5,29 +5,35 @@ contract Ballot{
     //Variables 
 
     uint public totalVoters = 0;                //  total number of voters/jurors 
-    uint public totalVotes = 0;                 // total number of votes that have been cast
     enum State {Created, Voting, Ended}         // state variable for the system
     State public state ;
-    bytes32 winner ;
 
-    struct vote{
-        address voterAddress;  // address of the voter
-        uint proposalId ;   // choice of the voter
+    struct rating{
+        address jurorAddress;  // address of the voter
+        mapping(bytes32 => uint) categoryRatings ;   // ratings of the voter by each category 
     }
 
-    struct voter {
-        // address voterAddress ;  
-        string voterName ;
-        bool voted ;            
-        uint vote ;            // either we include number of votes the person has
-        uint weight ;          // or we include the weight of  the votes the person has
+    /* juror profile */
+    struct juror {
+        uint jurorId                               
+        address jurorAddress ;  
+    // string jurorName ;           // need to decide how to get this thing. Code is created with the assumption that only juror addresses are passed while creating an instance              
+        bool rated ;            
+        // uint vote ;            // either we include number of votes the person has
+        // uint weight ;          // or we include the weight of  the votes the person has
     }
 
-    struct Proposal {
-        uint voteCount ;
-        bytes32 name ;
-                                                // description could also be added    
+    /* proposal profile */
+    struct proposal {
+        uint proposalId
+        bytes32 proposalName ;                               // name of the proposal 
+        mapping(bytes32 => uint) aggregateRatings ;  // aggregate rating of the propsal in each cateogory
     }
+
+    mapping(uint => rating) private allRatings ;                  // juror id  mapped to the rating  
+    mapping(address => juror) public jurorRegister ;             // voter adrdess to details of the voter
+    mapping(uint => Proposal) public proposalRegister ;         // id of proposal to the proposal . Should it be directly from name to proposal so as casting vote becomes clear ?
+    mapping(bytes32 => uint8) public categorySet ;
 
     //MODIFIER 
     modifier condition(bool _condition){                        // only performed when the condition is satisfied 
@@ -45,19 +51,29 @@ contract Ballot{
         _;
     }
 
-    mapping(uint => vote) private votes ;                        // vote number mapped to the vote  
-    mapping(address => voter) public voterRegister ;             // voter adrdess to details of the voter
-    mapping(uint => Proposal) public proposalRegister ;         // id of proposal to the proposal . Should it be directly from name to proposal so as casting vote becomes clear ?
-
-
-
-    constructor (string memory _ballotOfficialName, bytes32[] memory proposalNames ){   // Looks like a constructor for yes or no vote for a single proposal
+    constructor (string memory _ballotOfficialName, bytes32[] memory proposalNames, bytes32[] memory categoryNames, address[] jurors ){   
         ballotOfficialAddress = msg.sender ;                                     // voting manager will create the ballot and that will become ballot official address
         ballotOfficialName  = _ballotOfficialName ;
         state = State.Created ;
+
         for (uint i = 0; i < proposalNames.length; i++) {
-            proposalRegister[i+1] = Proposal({name: proposalNames[i], voteCount: 0}));
+            proposal memory newProposal ;
+            newProposal.proposalId = i ;
+            newProposal.proposalName = proposalNames[i] ;
+            for(uint j=0;j< categoryNames;j++){
+                newProposal.aggregateRatings[categoryNames[j]] = 0 ;
+            }
+            proposalRegister[i] = newProposal;
         }
+
+        for(uint i=0;i<jurorAddress.length;i++){
+            jurorRegister[jurors[i]] = juror({jurorId:i, jurorAddress:jurors[i],rated:false}) ;
+        }
+
+        for(uint i=0;i<categoryNames;i++){
+            categorySet[categoryNames[i]] = 1; 
+        }
+        
     }   
 
     function addProposal(bytes32 memory _proposalName )                  // adding a proposal
@@ -65,8 +81,23 @@ contract Ballot{
         inState(State.Created)
         isChairperson 
     {
-        proposalRegister[proposalRegister.length] = Proposal({name: _proposalName, voteCount: 0})
+        proposal memory newProposal ;
+        newProposal.proposalId = proposalRegister.length ;
+        newProposal.proposalName = _proposalName ;
+        for(uint j=0;j< categoryNames;j++){
+            newProposal.aggregateRatings[categoryNames[j]] = 0 ;
+        }
     }
+
+    function addCategory(bytes32 memory _categoryName )                  // adding a proposal
+        public 
+        inState(State.Created)
+        isChairperson 
+    {
+        for (uint p = 0; p < proposalRegister.length; p++) {
+            proposalRegister[p].voteCount[_categoryName] = 0 ;
+        }
+    }    
 
     function addVoter(address _voterAddress , string memory _voterName)         // adding a voter 
         public inState(State.Created)
@@ -87,24 +118,24 @@ contract Ballot{
         state = State.Voting ;
     }
 
-    function castVote(uint _proposalId)                                         
+    function castVote(uint _proposalId,bytes32[] categories,uint[] ratings )                                         
         public 
         inState(State.Voting)
         returns (bool voted)
     {
         bool hasVoted = false ;
         if(voterRegister[msg.sender].voterName.length !=0 && !voterRegister[msg.sender].voted){                 
-            voterRegister[msg.sender].voted = true ;
+            
             vote memory v;
             v.voterAddress = msg.sender ;
             v.choice    = _proposalId ;
             proposalRegister[_proposalId].voteCount ++ ; 
-            totalVotes++ ;
+            voterRegister[msg.sender].voted = true ;
         }
         return hasVoted ;
     }
     
-    function endVote()
+    function aggregateScores()
         public 
         inState(State.Voting)
         isChairperson
