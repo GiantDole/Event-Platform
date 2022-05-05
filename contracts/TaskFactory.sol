@@ -53,6 +53,7 @@ contract TaskFactory is OrganizationManager{
         idCount++;
         tasks.push( new Task(_name, _desc, idCount, _budget, _time, 0, false) );
         organizerTasks[msg.sender].push(idCount);
+        /// withhold budget here
         emit TaskPosted(tasks.length-1);
     }
 
@@ -79,22 +80,28 @@ contract TaskFactory is OrganizationManager{
         emit TaskApplicationCompleted(_id, msg.sender);
     }
 
+    ///@notice withdraw application to task
+    function withdrawTaskApplication(uint64 _id) public {
+        tasks[_id].withdrawApplication(msg.sender);
+        emit TaskApplicationWithdrawn(_id, msg.sender);
+    }
+
     ///@notice view applicants for a task
     ///@dev only an organizer of the task can do so
     ///@dev public view function -- no gas needed
-    function viewApplicants(uint64 _id) public view onlyOrganizer() returns (address[] _applicants) {
+    function viewApplicants(uint64 _id) public view returns (address[] _applicants) {
         return tasks[_id].applicants;
     }
 
     //@notice accept task Applicant
-    function acceptApplicant(uint64 _id, address _applicant) public onlyOrganizer() {
+    function acceptTaskApplicant(uint64 _id, address _applicant) public {
         tasks[_id].acceptApplicant(_applicant);
         emit TaskApplicantAccepted(_id, _applicant);
     }
 
     ///@notice accept task assignment
     ///@dev tasks can only be accepted by approved applicants
-    function acceptAssignment(uint64 _id) public { 
+    function acceptTaskAssignment(uint64 _id) public { 
         tasks[_id].acceptAssignment(msg.sender);
         workerTasks[msg.sender].push(_id);
         emit TaskAssigned(_id, msg.sender);
