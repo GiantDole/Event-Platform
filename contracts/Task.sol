@@ -8,10 +8,11 @@ import "./OrganizationManager.sol";
 
 contract TaskFactory is OrganizationManager{ // also probably is Payable or whatever our payments contract is
 
-    event ApplicationCompleted(address applicant);
-    event ApplicationWithdrawn(uint taskId, address applicant);
-    event ApplicantAccepted(uint taskId, address applicant);
-    event Assignment(uint taskId, address assignee);
+    event ApplicationCompleted(address _applicant);
+    event ApplicationWithdrawn(address _applicant);
+    event ApplicantAccepted(address _applicant);
+    event Assignment(address _assignee);
+    event RejectAssignment(address _approved);
     event ProgressUpdated();
     event ProgressApproved();
     event Completion();
@@ -25,11 +26,11 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
 
     // variables that are always set to the same value at instantiation
     uint8 public percentCompleted;
-    bool public completed;
+    bool public isCompleted;
     bool public isAssigned;
 
     mapping(address=>bool) public isApplicant;
-    address[] public applicants;
+    address[] public applicants; 
     address public approved;
     address public assignment;
 
@@ -46,7 +47,7 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
 
         // variables that are always the same at instantiation
         percentCompleted = 0;
-        completed = 0;
+        isCompleted = 0;
         isAssigned = 0;
 
     }
@@ -70,11 +71,24 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
         emit ApplicationCompleted(_applicant);
     }
 
+    ///@notice withdraw application
+    function withdrawApplication(address _applicant) public {
+        isApplicant[_applicant] = 0;
+        emit ApplicationWithdrawn(_applicant);
+    }
+
     ///@notice view applicants for the task
     ///@dev only an organizer of the task can do so
     ///@dev public view function -- no gas needed
-    function viewApplicants() public view onlyOrganizer() returns (address[] _applicants) {
-        return applicants;
+    ///@dev BUT NOTE THAT WE MAY JUST WANT TO RETURN ALL APPLICANTS (EVEN WITHDRAWN) AND LOOP THROUGH ON FRONT-END IN THE END!!!!!
+    function viewApplicants() public view onlyOrganizer() returns (address[] _currApplicants) {
+        address[] currApplicants;
+        for (uint i; i < applicants.length; i++) {
+            if (isApplicant[applicants[i]]) {
+                currApplicants.push(applicants[i]);
+            }
+        } 
+        return currApplicants;
     }
 
     //@notice accept task Applicant
@@ -88,7 +102,9 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
     ///@dev tasks can only be accepted by approved applicants
     function acceptAssignment(uint64 _address) public onlyApproved() { 
         assignment = _address;
+        isAssigned = 1;
         emit Assignment(_address);
     }
+
 
 }
