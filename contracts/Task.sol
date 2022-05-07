@@ -13,8 +13,8 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
     event ApplicantAccepted(address _applicant);
     event Assignment(address _assignee);
     event RejectAssignment(address _approved);
-    event ProgressUpdated();
-    event ProgressApproved();
+    event ProgressUpdated(uint16 _addUnits, uint16 _completedUnits, uint16 _progressUnits);
+    event ProgressApproved(uint16 _addUnits, uint16 _completedUnits, uint16 _progressUnits);
     event Completion();
 
     // variables set at instantiation
@@ -30,9 +30,10 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
     uint16 public progressUnits; // total units of progress that the task involves
 
     // variables that are always set to the same value at instantiation
-    uint8 public completedUnits;
+    uint16 public completedUnits;
+    uint16 public approvedUnits; // total units of progress that has been approved by the organizer for payment
+    //uint16 withdrawnUnits; // do we need to keep track of this? believe we do if transfer is not automatic upon progress approval.
     bool public isAssigned;
-    bool public progressApproved;
 
     mapping(address=>bool) public isApplicant;
     address[] public applicants; 
@@ -52,14 +53,20 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
 
         // variables that are always the same at instantiation
         completedUnits = 0;
+        approvedUnits = 0;
         isAssigned = 0;
-        progressApproved = 1;
 
     }
 
     ///@notice only allow the task assignee to call the function
     modifier onlyAssignee() {
         require(assignment == msg.sender, "Callable: caller is not the task assignee");
+        _;
+    }
+
+    ///@notice only allow the task assignee to call the function
+    modifier onlyAssigneeOrOrganizer() {
+        require( assignment == msg.sender || _organizers[msg.sender] == 1, "Callable: caller is not the task assignee or organizer");
         _;
     }
 
@@ -113,11 +120,34 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
 
     ///@notice update progress
     ///@dev progress can only be updated by the assignee.
-    ///@dev note that money cannot be withdrawn based on progress until progress has been separately approved by an organizer.
-    function updateProgress(uint8 _completedUnits) public onlyAssigned() { 
-        assignment = _address;
-        isAssigned = 1;
-        emit ProgressUpdated(_address);
+    ///@dev note that if progress is updated by the assignee, progress still needs to be approved by an organizer before money can be transferred.
+    function updateProgress(uint8 _addUnits) public onlyAssigneeOrOrganizer() { 
+        require( _addUnits <= progressUnits - completedUnits, "Additional progress units requested are more than the remaining units on the task." );
+        completedUnits = completedUnits + _addUnits;
+        emit ProgressUpdated(_addUnits, completedUnits, progressUnits);
+        if (_organizers[msg.sender] == 1) {
+            approvedUnits += _addUnits;
+            ProgressApproved(_addUnits, approvedUnits, progressUnits);
+            // should we transfer the $$ automatically here? If we don't do it automatically, we need to keep track of how much assignee has already withdrawn.
+            // transferAmt = addUnits * budgetPerUnits;
+            if (approvedUnits == progressUnits) {
+                emit Completion();
+            }   
+        }
     }
+
+    ///@notice approve progress
+    ///@dev progress can only be approved by the organizer
+    function approveProgress() public onlyOrganizer() { 
+        addUnits = completedUnits - approvedUnits;
+        // automatically withdraw transfer amount?
+        // transferAmt = addUnits * budgetPerUnits;
+        approvedUnits = completedUnits;
+        ProgressApproved(addUnits, approvedUnits, progressUnits);
+        if (approvedUnits == progressUnits) {
+            emit Completion();
+        }
+    }
+
 
 }
