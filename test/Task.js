@@ -6,7 +6,12 @@ contract("Task", (accounts) => {
 
     let contractInstance;
     beforeEach(async () => {
-        contractInstance = await Task.new({from: owner});
+        _name = 'Important Task #1'
+        _desc = 'We need to do a very exciting task!'
+        _idCount = 0;
+        _budgetPerUnit = 1;
+        _progressUnits = 4;
+        contractInstance = await Task.new( _name, _desc, _idCount, _budgetPerUnit, _progressUnits, {from: owner});
     });
 
     context( "check that basic organizer functionality is inherited", async () => {
