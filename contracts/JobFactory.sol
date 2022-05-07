@@ -108,7 +108,7 @@ contract JobFactory is OrganizationManager{ // also probably is Payable or whate
     ///@notice apply to accept a job
     function applyToJob(uint64 _id) public {
         applicants[_id] = msg.sender;
-        keccak256(abi.encode(_id, msg.sender))] == 1
+        keccak256(abi.encode(_id, msg.sender))] == 1;
         emit ApplicationCompleted(_id, msg.sender);
     }
 
