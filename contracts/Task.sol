@@ -4,9 +4,10 @@ pragma solidity ^0.8.13;
 import "./OrganizationManager.sol";
 
 
+
 ///@title Task contracts
 
-contract Task is OrganizationManager{ // also probably is Payable or whatever our payments contract is
+contract Task is OrganizationManager { // also probably is Payable or whatever our payments contract is
 
     event ApplicationCompleted(address _applicant);
     event ApplicationWithdrawn(address _applicant);
@@ -94,14 +95,17 @@ contract Task is OrganizationManager{ // also probably is Payable or whatever ou
     ///@dev public view function -- no gas needed
     ///@dev BUT NOTE THAT WE MAY JUST WANT TO RETURN ALL APPLICANTS (EVEN WITHDRAWN) AND LOOP THROUGH ON FRONT-END IN THE END!!!!!
     function viewApplicants() public view onlyOrganizer() returns (address[] memory _currApplicants) {
-        address[] memory currApplicants;
+        address[] memory filtApplicants = new address[](applicants.length);
         uint16 currId = 0;
         for (uint i; i < applicants.length; i++) {
             if (isApplicant[applicants[i]]) {
-                currApplicants[currId] = applicants[i];
-                currId++;
+                filtApplicants[currId] = applicants[i];
             }
-        } 
+        }
+        address[] memory currApplicants = new address[](currId+1);
+        for (uint j = 0; j < currApplicants.length; j++) {
+            currApplicants[j] = filtApplicants[j];
+        }
         return currApplicants;
     }
 
