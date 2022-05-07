@@ -28,7 +28,7 @@ contract TaskFactory is OrganizationManager{
        idCount = 0;
     }
 
-    Task[] memory tasks;
+    Task[] tasks;
     
     // I don't actually think the below are needed -- use mappings to bool instead as we can loop through tasks array in a public view function that doesn't require gas.
     // uint64[] completedTasks; // array to store past tasks that are already completed (e.g. for tax purposes, etc.)
