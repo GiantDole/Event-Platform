@@ -65,42 +65,54 @@ contract TaskFactory is OrganizationManager {
     ///@notice view open postings that have not been assigned yet
     ///@dev SHOULD THIS JUST BE DONE ON FRONT-END? I THINK MAYBE!!!
     function viewOpenPostings() public view returns(Task[] memory _unassignedTasks){
-        Task[] memory unassignedTasks;
-        uint64 currId = 0;
+        Task[] memory filtTasks = new Task[](tasks.length);
+        uint16 currId = 0;
         for (uint i; i < tasks.length; i++) {
             if (tasks[i].isAssigned()) {
-                unassignedTasks[currId] = tasks[i];
+                filtTasks[currId] = tasks[i];
                 currId++;
             }
-        } 
+        }
+        Task[] memory unassignedTasks = new Task[](currId+1);
+        for (uint j = 0; j < unassignedTasks.length; j++) {
+            unassignedTasks[j] = filtTasks[j];
+        }      
         return unassignedTasks;
     }
 
-    ///@notice view worker tasks
+    ///@notice view organizer tasks
     ///@dev SHOULD THIS JUST BE DONE ON FRONT-END? I THINK MAYBE!!!
     function viewOrganizerTasks() public view returns(Task[] memory _organizerTasks){
-        Task[] memory organizerTasks;
-        uint64 currId = 0;
+        Task[] memory filtTasks = new Task[](tasks.length);
+        uint16 currId = 0;
         for (uint i; i < tasks.length; i++) {
             if (tasks[i].isOrganizer(msg.sender)) {
-                organizerTasks[currId] = tasks[i];
+                filtTasks[currId] = tasks[i];
                 currId++;
             }
-        } 
+        }
+        Task[] memory organizerTasks = new Task[](currId);
+        for (uint j = 0; j < organizerTasks.length; j++) {
+            organizerTasks[j] = filtTasks[j];
+        }      
         return organizerTasks;
     }
 
     ///@notice view worker tasks
     ///@dev SHOULD THIS JUST BE DONE ON FRONT-END? I THINK MAYBE!!!
     function viewWorkerTasks() public view returns(Task[] memory _workerTasks){
-        Task[] memory workerTasks;
-        uint64 currId = 0;
+        Task[] memory filtTasks = new Task[](tasks.length);
+        uint16 currId = 0;
         for (uint i; i < tasks.length; i++) {
             if (tasks[i].assignment() == msg.sender) {
-                workerTasks[currId] = tasks[i];
+                filtTasks[currId] = tasks[i];
                 currId++;
             }
-        } 
+        }
+        Task[] memory workerTasks = new Task[](currId);
+        for (uint j = 0; j < workerTasks.length; j++) {
+            workerTasks[j] = filtTasks[j];
+        }      
         return workerTasks;
     }
 
