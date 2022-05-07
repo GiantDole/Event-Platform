@@ -43,8 +43,8 @@ contract TaskFactory is OrganizationManager {
     // mapping(uint64=>address) internal assignment; // maps task id to a SINGLE assignee
 
     // @Adrian: this belongs here; managing tasks!
-    mapping (address => uint64[]) organizerTasks; // maps organizer address to tasks that they are an organizer of
-    mapping (address => uint64[]) workerTasks; // maps worker address to tasks that they are/were assigned to
+    //mapping (address => uint64[]) organizerTasks; // maps organizer address to tasks that they are an organizer of
+    //mapping (address => uint64[]) workerTasks; // maps worker address to tasks that they are/were assigned to
 
     ///@notice creates a new task posting
     ///@dev tasks can only be created by an organizer
@@ -52,7 +52,7 @@ contract TaskFactory is OrganizationManager {
     function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _progressUnits) public onlyOrganizer() {
         idCount++;
         tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits) );
-        organizerTasks[msg.sender].push(idCount);
+        // organizerTasks[msg.sender].push(idCount);
         /// withhold budgetPerUnit * progressUnits here
         emit TaskPosted(tasks.length-1);
     }
@@ -78,16 +78,30 @@ contract TaskFactory is OrganizationManager {
 
     ///@notice view worker tasks
     ///@dev SHOULD THIS JUST BE DONE ON FRONT-END? I THINK MAYBE!!!
-    function viewWorkerTasks() public view returns(Task[] memory _workerTasks){
-        Task[] memory unassignedTasks;
+    function viewOrganizerTasks() public view returns(Task[] memory _organizerTasks){
+        Task[] memory organizerTasks;
         uint64 currId = 0;
         for (uint i; i < tasks.length; i++) {
-            if (tasks[i].isAssigned()) {
-                unassignedTasks[currId] = tasks[i];
+            if (tasks[i].isOrganizer(msg.sender)) {
+                organizerTasks[currId] = tasks[i];
                 currId++;
             }
         } 
-        return unassignedTasks;
+        return organizerTasks;
+    }
+
+    ///@notice view worker tasks
+    ///@dev SHOULD THIS JUST BE DONE ON FRONT-END? I THINK MAYBE!!!
+    function viewWorkerTasks() public view returns(Task[] memory _workerTasks){
+        Task[] memory workerTasks;
+        uint64 currId = 0;
+        for (uint i; i < tasks.length; i++) {
+            if (tasks[i].assignment() == msg.sender) {
+                workerTasks[currId] = tasks[i];
+                currId++;
+            }
+        } 
+        return workerTasks;
     }
 
     ///@notice apply to accept a task
