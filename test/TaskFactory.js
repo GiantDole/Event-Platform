@@ -1,4 +1,4 @@
-const TaskFactory = artifacs.require("TaskFactory");
+const TaskFactory = artifacts.require("TaskFactory");
 const utils = require("./helpers/utils");
 
 contract("TaskFactory", (accounts) => {
@@ -18,9 +18,10 @@ contract("TaskFactory", (accounts) => {
     });
 
     it("should set owner of task correctly", async () => {
-        const ownerTask = contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits);
-        const ownerOfTask = ownerTask.isOwner(owner);
-        assert(ownerOfTask == true);
+        const ownerTask = await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits);
+        const ownerOfTask = ownerTask.owner();
+        new Promise(() => {console.log(ownerTask)});
+        assert(ownerOfTask == owner);
     })
 
     xcontext("Task Creation", async () => {
