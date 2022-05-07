@@ -26,7 +26,7 @@ contract("TaskFactory", (accounts) => {
     xcontext("Task Creation", async () => {
         xit("should create a new task open for applicaton", async () => {
             const ownerTask = contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits);
-
+            
         })
 
         xit("should create a new task with assigned contractor", async () => {
