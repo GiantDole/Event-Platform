@@ -7,8 +7,8 @@ import "./Task.sol";
 
 ///@title Collection and creation of all task postings
 
-contract TaskFactory is OrganizationManager{ 
-
+contract TaskFactory is OrganizationManager { 
+ 
     event TaskPosted(uint id);
     event TaskApplicationCompleted(uint taskId, address applicant);
     event TaskApplicationWithdrawn(uint taskId, address applicant);
@@ -43,7 +43,7 @@ contract TaskFactory is OrganizationManager{
     // mapping(uint64=>address) internal assignment; // maps task id to a SINGLE assignee
 
     // @Adrian: this belongs here; managing tasks!
-    // mapping (address => uint64[]) organizerTasks; // maps organizer address to tasks that they are an organizer of
+    mapping (address => uint64[]) organizerTasks; // maps organizer address to tasks that they are an organizer of
     mapping (address => uint64[]) workerTasks; // maps worker address to tasks that they are/were assigned to
 
     ///@notice creates a new task posting
@@ -51,60 +51,76 @@ contract TaskFactory is OrganizationManager{
     ///@dev incrementing idCount depends on overflow protection; only use with Solidity verions >0.8!
     function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _progressUnits) public onlyOrganizer() {
         idCount++;
-        tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits, 0, false) );
+        tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits) );
         organizerTasks[msg.sender].push(idCount);
         /// withhold budgetPerUnit * progressUnits here
         emit TaskPosted(tasks.length-1);
     }
 
     ///@notice view ALL task postings, past and present
-    function viewAllPostings() public view returns(Task[] _tasks){
+    function viewAllPostings() public view returns(Task[] memory _tasks){
         return tasks;
     }
 
     ///@notice view open postings that have not been assigned yet
     ///@dev SHOULD THIS JUST BE DONE ON FRONT-END? I THINK MAYBE!!!
-    function viewOpenPostings() public view returns(Task[] _unassignedTasks){
-        Task[] unassignedTasks;
+    function viewOpenPostings() public view returns(Task[] memory _unassignedTasks){
+        Task[] memory unassignedTasks;
+        uint64 currId = 0;
         for (uint i; i < tasks.length; i++) {
-            if (tasks[i].isAssigned) {
-                unassignedTasks.push(tasks[i]);
+            if (tasks[i].isAssigned()) {
+                unassignedTasks[currId] = tasks[i];
+                currId++;
+            }
+        } 
+        return unassignedTasks;
+    }
+
+    ///@notice view worker tasks
+    ///@dev SHOULD THIS JUST BE DONE ON FRONT-END? I THINK MAYBE!!!
+    function viewWorkerTasks() public view returns(Task[] memory _workerTasks){
+        Task[] memory unassignedTasks;
+        uint64 currId = 0;
+        for (uint i; i < tasks.length; i++) {
+            if (tasks[i].isAssigned()) {
+                unassignedTasks[currId] = tasks[i];
+                currId++;
             }
         } 
         return unassignedTasks;
     }
 
     ///@notice apply to accept a task
-    function applyToTask(uint64 _id) public {
-        tasks[_id].apply(msg.sender);
-        emit TaskApplicationCompleted(_id, msg.sender);
-    }
+    // function applyToTask(uint64 _id) public {
+    //     tasks[_id].applyTo(msg.sender);
+    //     emit TaskApplicationCompleted(_id, msg.sender);
+    // }
 
     ///@notice withdraw application to task
-    function withdrawTaskApplication(uint64 _id) public {
-        tasks[_id].withdrawApplication(msg.sender);
-        emit TaskApplicationWithdrawn(_id, msg.sender);
-    }
+    // function withdrawTaskApplication(uint64 _id) public {
+    //     tasks[_id].withdrawApplication(msg.sender);
+    //     emit TaskApplicationWithdrawn(_id, msg.sender);
+    // }
 
     ///@notice view applicants for a task
     ///@dev only an organizer of the task can do so
     ///@dev public view function -- no gas needed
-    function viewApplicants(uint64 _id) public view returns (address[] _applicants) {
-        return tasks[_id].applicants;
-    }
+    // function viewApplicants(uint64 _id) public view returns (address[] memory _applicants) {
+    //     return tasks[_id].viewApplicants();
+    // }
 
     //@notice accept task Applicant
-    function acceptTaskApplicant(uint64 _id, address _applicant) public {
-        tasks[_id].acceptApplicant(_applicant);
-        emit TaskApplicantAccepted(_id, _applicant);
-    }
+    // function acceptTaskApplicant(uint64 _id, address _applicant) public {
+    //     tasks[_id].acceptApplicant(_applicant);
+    //     emit TaskApplicantAccepted(_id, _applicant);
+    // }
 
     ///@notice accept task assignment
     ///@dev tasks can only be accepted by approved applicants
-    function acceptTaskAssignment(uint64 _id) public { 
-        tasks[_id].acceptAssignment(msg.sender);
-        workerTasks[msg.sender].push(_id);
-        emit TaskAssigned(_id, msg.sender);
-    }
+    // function acceptTaskAssignment(uint64 _id) public { 
+    //     tasks[_id].acceptAssignment(msg.sender);
+    //     workerTasks[msg.sender].push(_id);
+    //     emit TaskAssigned(_id, msg.sender);
+    // }
 
 }

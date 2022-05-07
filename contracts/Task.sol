@@ -6,7 +6,7 @@ import "./OrganizationManager.sol";
 
 ///@title Task contracts
 
-contract TaskFactory is OrganizationManager{ // also probably is Payable or whatever our payments contract is
+contract Task is OrganizationManager{ // also probably is Payable or whatever our payments contract is
 
     event ApplicationCompleted(address _applicant);
     event ApplicationWithdrawn(address _applicant);
@@ -54,7 +54,7 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
         // variables that are always the same at instantiation
         completedUnits = 0;
         approvedUnits = 0;
-        isAssigned = 0;
+        isAssigned = false;
 
     }
 
@@ -77,27 +77,29 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
     }
 
     ///@notice apply for a task
-    function apply(address _applicant) public {
-        isApplicant[_applicant] = 1;
-        applicants.push(_applicant);
-        emit ApplicationCompleted(_applicant);
+    function applyTo() public {
+        isApplicant[msg.sender] = true;
+        applicants.push(msg.sender);
+        emit ApplicationCompleted(msg.sender);
     }
 
     ///@notice withdraw application
-    function withdrawApplication(address _applicant) public {
-        isApplicant[_applicant] = 0;
-        emit ApplicationWithdrawn(_applicant);
+    function withdrawApplication() public {
+        isApplicant[msg.sender] = false;
+        emit ApplicationWithdrawn(msg.sender);
     }
 
     ///@notice view applicants for the task
     ///@dev only an organizer of the task can do so
     ///@dev public view function -- no gas needed
     ///@dev BUT NOTE THAT WE MAY JUST WANT TO RETURN ALL APPLICANTS (EVEN WITHDRAWN) AND LOOP THROUGH ON FRONT-END IN THE END!!!!!
-    function viewApplicants() public view onlyOrganizer() returns (address[] _currApplicants) {
-        address[] currApplicants;
+    function viewApplicants() public view onlyOrganizer() returns (address[] memory _currApplicants) {
+        address[] memory currApplicants;
+        uint16 currId = 0;
         for (uint i; i < applicants.length; i++) {
             if (isApplicant[applicants[i]]) {
-                currApplicants.push(applicants[i]);
+                currApplicants[currId] = applicants[i];
+                currId++;
             }
         } 
         return currApplicants;
@@ -105,17 +107,17 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
 
     //@notice accept task Applicant
     function acceptApplicant(address _applicant) public onlyOrganizer() {
-        require(isApplicant[_applicant] == 1, "Callable: input address is not an existing applicant and therefore cannot be accepted.");
+        require(isApplicant[_applicant] == true, "Callable: input address is not an existing applicant and therefore cannot be accepted.");
         approved = _applicant;
         emit ApplicantAccepted(_applicant);
     }
 
     ///@notice accept task assignment
     ///@dev tasks can only be accepted by approved applicants
-    function acceptAssignment(uint64 _address) public onlyApproved() { 
-        assignment = _address;
-        isAssigned = 1;
-        emit Assignment(_address);
+    function acceptAssignment() public onlyApproved() { 
+        assignment = msg.sender;
+        isAssigned = true;
+        emit Assignment(msg.sender);
     }
 
     ///@notice update progress
@@ -127,7 +129,7 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
         emit ProgressUpdated(_addUnits, completedUnits, progressUnits);
         if (_organizers[msg.sender] == 1) {
             approvedUnits += _addUnits;
-            ProgressApproved(_addUnits, approvedUnits, progressUnits);
+            emit ProgressApproved(_addUnits, approvedUnits, progressUnits);
             // should we transfer the $$ automatically here? If we don't do it automatically, we need to keep track of how much assignee has already withdrawn.
             // transferAmt = addUnits * budgetPerUnits;
             if (approvedUnits == progressUnits) {
@@ -139,11 +141,11 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
     ///@notice approve progress
     ///@dev progress can only be approved by the organizer
     function approveProgress() public onlyOrganizer() { 
-        addUnits = completedUnits - approvedUnits;
+        uint16 addUnits = completedUnits - approvedUnits;
         // automatically withdraw transfer amount?
         // transferAmt = addUnits * budgetPerUnits;
         approvedUnits = completedUnits;
-        ProgressApproved(addUnits, approvedUnits, progressUnits);
+        emit ProgressApproved(addUnits, approvedUnits, progressUnits);
         if (approvedUnits == progressUnits) {
             emit Completion();
         }
