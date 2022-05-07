@@ -9,7 +9,7 @@ import "./Task.sol";
 
 contract TaskFactory is OrganizationManager { 
  
-    event TaskPosted(uint id);
+    event TaskPosted(Task _task);
     event TaskApplicationCompleted(uint taskId, address applicant);
     event TaskApplicationWithdrawn(uint taskId, address applicant);
     event TaskApplicantAccepted(uint taskId, address applicant);
@@ -51,10 +51,10 @@ contract TaskFactory is OrganizationManager {
     ///@dev incrementing idCount depends on overflow protection; only use with Solidity verions >0.8!
     function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _progressUnits) public onlyOrganizer() {
         idCount++;
-        tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits) );
+        task = tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits) );
         // organizerTasks[msg.sender].push(idCount);
         /// withhold budgetPerUnit * progressUnits here
-        emit TaskPosted(tasks.length-1);
+        emit TaskPosted(task);
     }
 
     ///@notice view ALL task postings, past and present
