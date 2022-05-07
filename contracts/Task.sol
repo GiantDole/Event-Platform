@@ -77,16 +77,16 @@ contract Task is OrganizationManager{ // also probably is Payable or whatever ou
     }
 
     ///@notice apply for a task
-    function applyTo(address _applicant) public {
-        isApplicant[_applicant] = true;
-        applicants.push(_applicant);
-        emit ApplicationCompleted(_applicant);
+    function applyTo() public {
+        isApplicant[msg.sender] = true;
+        applicants.push(msg.sender);
+        emit ApplicationCompleted(msg.sender);
     }
 
     ///@notice withdraw application
-    function withdrawApplication(address _applicant) public {
-        isApplicant[_applicant] = false;
-        emit ApplicationWithdrawn(_applicant);
+    function withdrawApplication() public {
+        isApplicant[msg.sender] = false;
+        emit ApplicationWithdrawn(msg.sender);
     }
 
     ///@notice view applicants for the task
@@ -114,10 +114,10 @@ contract Task is OrganizationManager{ // also probably is Payable or whatever ou
 
     ///@notice accept task assignment
     ///@dev tasks can only be accepted by approved applicants
-    function acceptAssignment(address _address) public onlyApproved() { 
-        assignment = _address;
+    function acceptAssignment() public onlyApproved() { 
+        assignment = msg.sender;
         isAssigned = true;
-        emit Assignment(_address);
+        emit Assignment(msg.sender);
     }
 
     ///@notice update progress
