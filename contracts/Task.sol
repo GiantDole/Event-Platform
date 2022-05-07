@@ -100,9 +100,10 @@ contract Task is OrganizationManager { // also probably is Payable or whatever o
         for (uint i; i < applicants.length; i++) {
             if (isApplicant[applicants[i]]) {
                 filtApplicants[currId] = applicants[i];
+                currId++;
             }
         }
-        address[] memory currApplicants = new address[](currId+1);
+        address[] memory currApplicants = new address[](currId);
         for (uint j = 0; j < currApplicants.length; j++) {
             currApplicants[j] = filtApplicants[j];
         }
