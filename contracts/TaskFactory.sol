@@ -76,37 +76,51 @@ contract TaskFactory is OrganizationManager {
         return unassignedTasks;
     }
 
-    ///@notice apply to accept a task
-    function applyToTask(uint64 _id) public {
-        tasks[_id].applyTo(msg.sender);
-        emit TaskApplicationCompleted(_id, msg.sender);
+    ///@notice view worker tasks
+    ///@dev SHOULD THIS JUST BE DONE ON FRONT-END? I THINK MAYBE!!!
+    function viewWorkerTasks() public view returns(Task[] memory _workerTasks){
+        Task[] memory unassignedTasks;
+        uint64 currId = 0;
+        for (uint i; i < tasks.length; i++) {
+            if (tasks[i].isAssigned()) {
+                unassignedTasks[currId] = tasks[i];
+                currId++;
+            }
+        } 
+        return unassignedTasks;
     }
 
+    ///@notice apply to accept a task
+    // function applyToTask(uint64 _id) public {
+    //     tasks[_id].applyTo(msg.sender);
+    //     emit TaskApplicationCompleted(_id, msg.sender);
+    // }
+
     ///@notice withdraw application to task
-    function withdrawTaskApplication(uint64 _id) public {
-        tasks[_id].withdrawApplication(msg.sender);
-        emit TaskApplicationWithdrawn(_id, msg.sender);
-    }
+    // function withdrawTaskApplication(uint64 _id) public {
+    //     tasks[_id].withdrawApplication(msg.sender);
+    //     emit TaskApplicationWithdrawn(_id, msg.sender);
+    // }
 
     ///@notice view applicants for a task
     ///@dev only an organizer of the task can do so
     ///@dev public view function -- no gas needed
-    function viewApplicants(uint64 _id) public view returns (address[] memory _applicants) {
-        return tasks[_id].viewApplicants();
-    }
+    // function viewApplicants(uint64 _id) public view returns (address[] memory _applicants) {
+    //     return tasks[_id].viewApplicants();
+    // }
 
     //@notice accept task Applicant
-    function acceptTaskApplicant(uint64 _id, address _applicant) public {
-        tasks[_id].acceptApplicant(_applicant);
-        emit TaskApplicantAccepted(_id, _applicant);
-    }
+    // function acceptTaskApplicant(uint64 _id, address _applicant) public {
+    //     tasks[_id].acceptApplicant(_applicant);
+    //     emit TaskApplicantAccepted(_id, _applicant);
+    // }
 
     ///@notice accept task assignment
     ///@dev tasks can only be accepted by approved applicants
-    function acceptTaskAssignment(uint64 _id) public { 
-        tasks[_id].acceptAssignment(msg.sender);
-        workerTasks[msg.sender].push(_id);
-        emit TaskAssigned(_id, msg.sender);
-    }
+    // function acceptTaskAssignment(uint64 _id) public { 
+    //     tasks[_id].acceptAssignment(msg.sender);
+    //     workerTasks[msg.sender].push(_id);
+    //     emit TaskAssigned(_id, msg.sender);
+    // }
 
 }
