@@ -9,17 +9,20 @@ contract("Task", (accounts) => {
         contractInstance = await Task.new({from: owner});
     });
 
-    context( "check that basic organizer functionality is inherited (note that organizer functionality is tested seprately in Organizer.js)")
-    it("should set owner (sender) as organizer as well", async () => {
-        const ownerIsOrganizer = await contractInstance.isOrganizer(owner);
-        const otherIsOrganizer = await contractInstance.isOrganizer(other);
-        assert.equal(ownerIsOrganizer, true);
-        assert.equal(otherIsOrganizer, false);
+    context( "check that basic organizer functionality is inherited", async () => {
+    // note that organizer functionality is tested seprately in Organizer.js. This is just one simple test to check inheritance.
+        it("should set owner (sender) as organizer as well", async () => {
+            const ownerIsOrganizer = await contractInstance.isOrganizer(owner);
+            const otherIsOrganizer = await contractInstance.isOrganizer(other);
+            assert.equal(ownerIsOrganizer, true);
+            assert.equal(otherIsOrganizer, false);
+        })
     })
 
-    xcontext( "check application functionality")
-    xit("check that application leads to applicant being added to applicant list", async () => {
-        await contractInstance.apply(organizer, {from: owner}); 
+    xcontext( "check application functionality", async () => {
+        it("check that application leads to applicant being added to applicant list", async () => {
+            await contractInstance.apply(organizer, {from: owner}); 
+        })
     })
 
     xcontext("adding an organizer", async () => {
