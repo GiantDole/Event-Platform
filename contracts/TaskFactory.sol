@@ -76,7 +76,7 @@ contract TaskFactory is OrganizationManager{
 
     ///@notice apply to accept a task
     function applyToTask(uint64 _id) public {
-        tasks[_id].apply(msg.sender);
+        tasks[_id].applyTo(msg.sender);
         emit TaskApplicationCompleted(_id, msg.sender);
     }
 

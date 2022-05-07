@@ -77,7 +77,7 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
     }
 
     ///@notice apply for a task
-    function apply(address _applicant) public {
+    function applyTo(address _applicant) public {
         isApplicant[_applicant] = 1;
         applicants.push(_applicant);
         emit ApplicationCompleted(_applicant);
