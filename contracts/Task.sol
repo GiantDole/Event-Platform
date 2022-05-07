@@ -18,16 +18,21 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
     event Completion();
 
     // variables set at instantiation
+    // progressUnits = number of units that the work for the task will be measured in, and for which payment can be transferred to the assignee.
+    // e.g. if the task is a task that will be paid by the hour, this should be the number of hours, and the assignee will be able to request
+    // approval to withdraw budgetPerUnit for each hour they complete. 
+    // if the task is to be paid in in four chunks, progressUnits = 4 and the assignee will be able to request approval to withdraw budgetPerUnit
+    // each of the 4 units are completed.
     string public name;
     string public desc; // description of task
     uint64 public id; //id will be given through index in array -- tbd but we may not actually need this in the task
-    uint64 public budget; //in wei?
-    uint8 public time; //time to complete the task in hours: uint8 means task can have at most 255 hours
+    uint64 public budgetPerUnit; //in wei?
+    uint16 public progressUnits; // total units of progress that the task involves
 
     // variables that are always set to the same value at instantiation
-    uint8 public percentCompleted;
-    bool public isCompleted;
+    uint8 public completedUnits;
     bool public isAssigned;
+    bool public progressApproved;
 
     mapping(address=>bool) public isApplicant;
     address[] public applicants; 
@@ -36,19 +41,19 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
 
 
     ///@notice constructor to instantiate the contract
-    constructor(string memory _name, string memory _desc, uint64 _id, uint64 _budget, uint8 _time) {
+    constructor(string memory _name, string memory _desc, uint64 _id, uint64 _budgetPerUnit, uint8 _progressUnits) {
         
         // input variables
         name = _name;
         desc = _desc;
         id = _id;
-        budget = _budget;
-        time = _time;
+        budgetPerUnit = _budgetPerUnit;
+        progressUnits = _progressUnits;
 
         // variables that are always the same at instantiation
-        percentCompleted = 0;
-        isCompleted = 0;
+        completedUnits = 0;
         isAssigned = 0;
+        progressApproved = 1;
 
     }
 
@@ -106,5 +111,13 @@ contract TaskFactory is OrganizationManager{ // also probably is Payable or what
         emit Assignment(_address);
     }
 
+    ///@notice update progress
+    ///@dev progress can only be updated by the assignee.
+    ///@dev note that money cannot be withdrawn based on progress until progress has been separately approved by an organizer.
+    function updateProgress(uint8 _completedUnits) public onlyAssigned() { 
+        assignment = _address;
+        isAssigned = 1;
+        emit ProgressUpdated(_address);
+    }
 
 }

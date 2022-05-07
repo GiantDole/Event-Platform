@@ -38,22 +38,22 @@ contract TaskFactory is OrganizationManager{
 
     // @Adrian: can't these information be held by a task contract? As we create them anyway that might be more memory efficient
     // @Hannah: we may not need these in the end but leaving the ones I'm not positive we DON"T need here for now.
-    mapping(uint64=>bool) isAssigned;
-    mapping(uint64=>bool) isComplete;
-    mapping(uint64=>address) internal assignment; // maps task id to a SINGLE assignee
+    // mapping(uint64=>bool) isAssigned;
+    // mapping(uint64=>bool) isComplete;
+    // mapping(uint64=>address) internal assignment; // maps task id to a SINGLE assignee
 
     // @Adrian: this belongs here; managing tasks!
-    mapping (address => uint64[]) organizerTasks; // maps organizer address to tasks that they are an organizer of
+    // mapping (address => uint64[]) organizerTasks; // maps organizer address to tasks that they are an organizer of
     mapping (address => uint64[]) workerTasks; // maps worker address to tasks that they are/were assigned to
 
     ///@notice creates a new task posting
     ///@dev tasks can only be created by an organizer
     ///@dev incrementing idCount depends on overflow protection; only use with Solidity verions >0.8!
-    function createTask(string memory _name, string memory _desc, uint64 _budget, uint8 _time) public onlyOrganizer() {
+    function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _progressUnits) public onlyOrganizer() {
         idCount++;
-        tasks.push( new Task(_name, _desc, idCount, _budget, _time, 0, false) );
+        tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits, 0, false) );
         organizerTasks[msg.sender].push(idCount);
-        /// withhold budget here
+        /// withhold budgetPerUnit * progressUnits here
         emit TaskPosted(tasks.length-1);
     }
 
