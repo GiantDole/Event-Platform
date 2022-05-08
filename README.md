@@ -1,5 +1,5 @@
 ### TaskFactory
-Freelancing platform for an event organizer to post tasks and students to apply. Organizers can approve a student for a task and a contract is established. After efforts by the student are approved, the student can withdraw entitled balance.
+Freelancing platform for an task manager to post tasks and students to apply. Organizers can approve a student for a task and a contract is established. After efforts by the student are approved, the student can withdraw entitled balance.
 **Users**: 
 - Applicant: can apply for job offers and accept if successful 
 - Organizers: can post job offers and review applications
