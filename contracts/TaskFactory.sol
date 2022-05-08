@@ -50,11 +50,12 @@ contract TaskFactory is OrganizationManager {
     ///@dev tasks can only be created by an organizer
     ///@dev incrementing idCount depends on overflow protection; only use with Solidity verions >0.8!
     function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _progressUnits) public onlyOrganizer() {
-        idCount++;
-        task = tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits) );
+        tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits) );
+        tasks[idCount].transferOwnership(msg.sender);
         // organizerTasks[msg.sender].push(idCount);
         /// withhold budgetPerUnit * progressUnits here
-        emit TaskPosted(task);
+        emit TaskPosted(tasks[idCount]);
+        idCount++;
     }
 
     ///@notice view ALL task postings, past and present
