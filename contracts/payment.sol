@@ -1,44 +1,69 @@
+//SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
+
 //OBJECTIVE
 //1. MONEY IS TAKEN FROM THE OWNER OF THE JOB AND SET INTO THIS CONTRACT
 //2. MONEY CAN ONLY BE WITHDRAWN BY THE CONTRACTOR ON SUCESSFUL COMPLETION OF THE JOB
 
 /**
- *Ref:https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/finance/PaymentSplitter.sol
- * @title Payment
- * Payment follows a _pull payment_ model i.e. payments are not automatically forwarded to the
+ * Payment follows a pull payment model i.e. payments are not automatically forwarded to the
  * accounts but kept in this contract, and the actual transfer is triggered as a separate step by calling the withdraw
  * function.
  */
 
 // @Adrian: import OrganizationManager
+//@Sharique: Since Task is inheriting Payment we don't need to inherit Organization Manager
+
 import "./OrganizationManager.sol";
-// @Adrian: TODO; import Job
-contract Payment is OrganizationManager{
+
+contract Payment is OrganizationManager {
     event PaymentReceived(address from, uint256 amount);
     event PaymentReleased(address to, uint256 amount);
+    event InvoiceEvent(
+        string _contractorName,
+        address _contractoraddress,
+        uint256 _invoiceNumber,
+        uint256 _numberHours,
+        string _amount,
+        uint256 _invoiceReleaseDate
+    );
 
-    //Will check later the view part of the variables and the reduncies of few varibales
-    // @Adrian: JobID is known because payment inherits Job
-    uint64 public jobID;
-    address public contractoraddress;
+    //jobId is known through Task inheriting Payment
+    //uint64 public jobID;
+    //contractorAddress known in Task
+    //address public contractoraddress;
+    uint256 _invoiceNumber = 1;
+
+    struct Invoice {
+        string contractorName;
+        address contractoraddress;
+        uint256 invoiceNumber;
+        uint256 numberHours;
+        string amount;
+        uint256 invoiceReleaseDate;
+    }
+
     // @Adrian: Isn't budget equal to the balance locked in this smart contract?
+    //@ Sharique: But if contractor partiallly withdraws money  then the budget wouldn't be equal to the balance
     uint64 public budget;
     uint8 public percentCompleted;
+
     // @Adrian: adding units
     //          remove percentcompleted
     //          add functionality for units
     //          !! dont't forget units: contractors need to create invoice
-    uint8 public unitsCompleted;
-    uint8 public unitsWithdrawn;
-
-    bool public completed;
+    //uint64 public unitsCompleted;
+    //uint64 public unitsWithdrawn = 0;
+    //uint64 public totalunit;
+    //uint64 public paymentperunit;
+    //bool public completed;
     // @Adrian: Instead of percentCompleted: unit counter & paymentperunit
     //          Have a unit counter that captures completed work
     //          Units can be requested by contractor and confirmed by organizer
     //          If contractor wished to withdraw funds, they can withdraw completed units * paymentperunit
     //          Maybe two variables: unitsWithdrawn and unitsCompleted
     //          --> we can differ between units that have been worked and accepted by organizers and units that have been withdrawn already
-    //          
+    //
 
     // @Adrian: Missing functionality:
     //          add budget to this job
@@ -46,52 +71,46 @@ contract Payment is OrganizationManager{
     //          create invoice
     //          change paymentperunit
 
-
     ///@notice creates a new instance of Payment
     ///@dev jobs can only be created by the owner
 
     // @Adrian: require that budget is at least e.g. 3 units * paymentperunit
-    constructor(
-        uint64 _jobID,
-        address _contractoraddress,
-        uint64 _budget,
-        uint8 _percentCompleted,
-        bool _completed
-    ) payable onlyOwner() {
-        jobID = _jobID; //Setting job ID
-        contractoraddress = _contractoraddress;
-        budget = _budget;
-        percentCompleted = _percentCompleted;
-        completed = _completed;
-        require(
-            msg.value == _budget,
-            "Owner should deposit money equal to the budget"
-        );
-
-        emit PaymentReceived(msg.sender, msg.value);
-    }
+    //@Sharique: How to make sure only one payment contract is made for each job ID. We could have a situation where mutliple payment contracts could be build for
+    // each job ID
+    mapping(uint256 => bool) public paymentcontractdeployed; //Maps job ID to whether payment contract deployed
+    mapping(uint256 => address) public paymentcontractaddress; //Maps job ID to payment contract address
+    mapping(address => Invoice[]) private contractorAddressInvoiceMap; // map the name of the client to invoices
+    mapping(address => uint256[]) private contractorAddressInvoiceNumMap; //map the client address to the invoice numbers.
+    mapping(address => uint256) private contractorAddressInvoiceCountMap; //map the name of the address to an invoice count
 
     /**
      * @dev Getter for the total budget for the job
      */
-    function getBudget() public view returns (uint64) {
-        return budget;
+    function getBudget() public view returns (uint) {
+        return address(this).balance;
     }
 
     /**
      * @dev Getter for the progress for the job
      */
-     // @Adrian: adapt for completed units
-    function getprogress() public view returns (uint8) {
-        return percentCompleted;
-    }
+    // @Adrian: adapt for completed units
+    //function getProgress() public view returns (uint64) {
+    //    return percentCompleted;
+    //}
 
     /**
      * @dev Getter for the completion of the job
      */
-     // @Adrian: we can leave a potential completed flag - rarely used though
+    // @Adrian: we can leave a potential completed flag - rarely used though
     function iscompleted() public view returns (bool) {
         return percentCompleted == 1 ? true : false;
+    }
+
+    /**
+     * @dev Getter for the contract address associated with a job ID
+     */
+    function getcontractaddress(uint64 _jobID) public view returns (address) {
+        return paymentcontractaddress[_jobID];
     }
 
     /**
@@ -102,38 +121,59 @@ contract Payment is OrganizationManager{
     }
 
     /**
-     * @dev Function for contractor to withdraw assets if the job has been fulfilled
+     * @dev Increments the Invoice Count
      */
-     // @Adrian: adapt: either completed or just withdraw commited units.
-    function _withdraw() public {
-        require(
-            msg.sender == contractoraddress,
-            "Only the contractor can withdraw the payment."
-        );
-
-        require(iscompleted() == true, "Job still not completed");
-        (bool paidContractor, ) = payable(contractoraddress).call{
-            value: address(this).balance
-        }("");
-        require(paidContractor, "Payment did not reach contractor");
-        emit PaymentReleased(msg.sender, address(this).balance);
+    function incremmentInvoiceCount(address _contractoraddress)
+        private
+        returns (uint256)
+    {
+        return contractorAddressInvoiceCountMap[_contractoraddress] += 1;
     }
 
-    //QUESIONS:
-    //1. Do we want to make payment if time taken is more than time limit. For that we need to introduce time componet
-    //2. Do we need a function to revert money back to the owner in case the job is not fulfilled.
+    /**
+     * @dev Getter for the count of invoices associated with the given client address
+     */
+    function getInvoiceCount(address _contractoraddress)
+        public
+        view
+        onlyOwner
+        returns (uint256 count)
+    {
+        count = contractorAddressInvoiceCountMap[_contractoraddress];
+    }
 
-    //GENERAL GUIDELINES:
-    //ADD SOME MODIFIERS
-    //THINK ABOUT MORE FUNCTIONS
-    //PUBLIC VS PRIVATE, INTERNAL VS EXTERNAL
-    //IF FOR SOME REASON IF THE JOB IS NOT COMPLETED ADD SOME FUNCTIONALITY TO REVERT MONEY
-    //ADD FUNCTIONALITY TO UPDATE BUDGET AND % COMPLETED
-    //EMIT SOME EVENTS
-    //CHECK SOME PROPER IMPLEMENTAIONS ON YOUTUBE
+    /**
+     * @dev Getter for invoice of any particular contractor address
+     */
+    function getInvoiceNumbers(address _contractoraddress)
+        public
+        view
+        onlyOwner
+        returns (uint256[] memory)
+    {
+        return contractorAddressInvoiceNumMap[_contractoraddress];
+    }
 
-    //JOB FACTORY
-    //MSG.VALUE>BUDGET PAY THE REST
-    //CHECK TJE NAMING CONVENTION
-    //JOB ARRAY, JOB ID , CONTRCATOT ADDRESS
+    /**
+     * @dev Function for contractor to withdraw assets if the job has been partially completed.
+     */
+    //function _withdrawPartially(uint64 unitsRequested) public {
+    //    require(
+    //        msg.sender == contractoraddress,
+    //        "Only the contractor can withdraw the payment."
+    //    );
+    //    require(
+    //        (unitsCompleted - unitsWithdrawn) >= unitsRequested,
+    //        "Can't withdraw for more units than worked done."
+    //    );
+
+    //    (bool paidContractor, ) = payable(contractoraddress).call{
+    //        value: unitsRequested * paymentperunit
+    //    }("");
+    //    require(paidContractor, "Payment did not reach contractor");
+
+    //    unitsWithdrawn = unitsWithdrawn + unitsRequested;
+
+    //    emit PaymentReleased(msg.sender, unitsRequested * paymentperunit);
+    //}
 }

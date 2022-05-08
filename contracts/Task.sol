@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.6;
 
-import "./OrganizationManager.sol";
+import "./Payment.sol";
 
 
 
 ///@title Task contracts
 
-contract Task is OrganizationManager { // also probably is Payable or whatever our payments contract is
+contract Task is Payment { // also probably is Payable or whatever our payments contract is
 
     event TaskCreated(address _contract);
     //TODO: rename to ApplicationSubmitted?
@@ -36,13 +36,18 @@ contract Task is OrganizationManager { // also probably is Payable or whatever o
     uint16 public completedUnits;
     uint16 public approvedUnits; // total units of progress that has been approved by the organizer for payment
     //uint16 withdrawnUnits; // do we need to keep track of this? believe we do if transfer is not automatic upon progress approval.
-    bool public isAssigned;
+    //bool public isAssigned;
 
     mapping(address=>bool) public isApplicant;
     address[] public applicants; 
     address public approved;
     address public assignment;
 
+    modifier onlyTeam() {
+        require(approved != address(0), "No contractor has been set for this task!");
+        require(msg.sender == approved, "Only contractors of this task can call this function!");
+        _;
+    }
 
     ///@notice constructor to instantiate the contract
     constructor(string memory _name, string memory _desc, uint64 _id, uint64 _budgetPerUnit, uint8 _progressUnits) {
@@ -114,9 +119,12 @@ contract Task is OrganizationManager { // also probably is Payable or whatever o
     }
 
     //@notice accept task Applicant
-    function acceptApplicant(address _applicant) public onlyOrganizer() {
+    function acceptApplicant(address _applicant) public payable onlyOrganizer() {
         require(isApplicant[_applicant] == true, "Callable: input address is not an existing applicant and therefore cannot be accepted.");
         approved = _applicant;
+
+        _setup();
+
         emit ApplicantAccepted(_applicant);
     }
 
@@ -159,5 +167,68 @@ contract Task is OrganizationManager { // also probably is Payable or whatever o
         }
     }
 
+    function getRemainingEntitled() public view returns(uint){
+        return approvedUnits * budgetPerUnit;
+    }
 
+
+
+    //Functionality imported from old Payment
+
+    /**
+     * @dev Getter to update paymentperuint
+     */
+    function updatePaymentPerUnit(uint64 _budgetPerUnit) public onlyOwner {
+        budgetPerUnit = _budgetPerUnit;
+        budget = totalunit * newPaymentperunit;
+    }
+
+    /**
+     * @dev Function  to add contract invoice
+     */
+    function addInvoice(
+        string memory _contractorName,
+        //uint256 _invoiceNumber,
+        uint256 _numberHours,
+        string memory _amount,
+        uint256 _invoiceReleaseDate
+    ) public onlyOwner {
+        Invoice memory newInvoice;
+        newInvoice.contractorName = _contractorName;
+        newInvoice.contractoraddress = contractoraddress;
+        newInvoice.invoiceNumber = _invoiceNumber;
+        newInvoice.numberHours = _numberHours;
+        newInvoice.amount = _amount;
+        newInvoice.invoiceReleaseDate = _invoiceReleaseDate;
+        contractorAddressInvoiceMap[contractoraddress].push(newInvoice);
+        contractorAddressInvoiceNumMap[contractoraddress].push(_invoiceNumber);
+
+        emit InvoiceEvent(
+            _contractorName,
+            contractoraddress,
+            newInvoice.invoiceNumber,
+            newInvoice.numberHours,
+            newInvoice.amount,
+            newInvoice.invoiceReleaseDate
+        );
+        _invoiceNumber++;
+    }       
+
+    /**
+     * @dev Function for contractor to withdraw assets if the job is completed.
+     */
+    // @Adrian: adapt: either completed or just withdraw commited units.
+    function _withdrawOnEntireJobCompletion() public {
+        require(
+            msg.sender == contractoraddress,
+            "Only the contractor can withdraw the payment."
+        );
+
+        require(iscompleted() == true, "Job still not completed");
+        (bool paidContractor, ) = payable(contractoraddress).call{
+            value: address(this).balance
+        }("");
+        require(paidContractor, "Payment did not reach contractor");
+        emit PaymentReleased(msg.sender, address(this).balance);
+    }
 }
