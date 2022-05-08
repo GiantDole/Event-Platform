@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.6;
 
 import "./OrganizationManager.sol";
 
@@ -8,6 +8,8 @@ import "./OrganizationManager.sol";
 
 contract Task is OrganizationManager{ // also probably is Payable or whatever our payments contract is
 
+    event TaskCreated(address _contract);
+    //TODO: rename to ApplicationSubmitted?
     event ApplicationCompleted(address _applicant);
     event ApplicationWithdrawn(address _applicant);
     event ApplicantAccepted(address _applicant);
@@ -56,6 +58,7 @@ contract Task is OrganizationManager{ // also probably is Payable or whatever ou
         approvedUnits = 0;
         isAssigned = false;
 
+        emit TaskCreated(address(this));
     }
 
     ///@notice only allow the task assignee to call the function

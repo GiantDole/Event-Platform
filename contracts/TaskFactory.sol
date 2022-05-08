@@ -1,12 +1,12 @@
 //SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.6;
 
 import "./OrganizationManager.sol";
 import "./Task.sol";
 
 
-///@title Collection and creation of all task postings
 
+///@title Collection and creation of all task postings
 contract TaskFactory is OrganizationManager { 
  
     event TaskPosted(uint id);
@@ -25,7 +25,7 @@ contract TaskFactory is OrganizationManager {
     constructor() {
         // @Adrian: wouldn't id be implicitly managed through array position?
         // @Hannah: yes, we can probably just manage ids through array push. but leaving it for now.
-       idCount = 0;
+        idCount=0;
     }
 
     Task[] private tasks;
@@ -49,17 +49,23 @@ contract TaskFactory is OrganizationManager {
     ///@notice creates a new task posting
     ///@dev tasks can only be created by an organizer
     ///@dev incrementing idCount depends on overflow protection; only use with Solidity verions >0.8!
-    function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _progressUnits) public onlyOrganizer() {
-        idCount++;
-        tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits) );
-        organizerTasks[msg.sender].push(idCount);
+    ///@return taskID of the created Task contract
+    function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _progressUnits) public onlyOrganizer() returns(uint taskID){
+        Task task = new Task(_name, _desc, uint64(tasks.length), _budgetPerUnit, _progressUnits);
+        tasks.push( task );
+        organizerTasks[msg.sender].push(uint64(tasks.length-1));
         /// withhold budgetPerUnit * progressUnits here
         emit TaskPosted(tasks.length-1);
+        return uint(tasks.length-1);
     }
 
     ///@notice view ALL task postings, past and present
     function viewAllPostings() public view returns(Task[] memory _tasks){
         return tasks;
+    }
+
+    function getTaskOwner(uint _id) public view returns(address){
+        return tasks[_id].owner();
     }
 
     ///@notice view open postings that have not been assigned yet
@@ -88,6 +94,10 @@ contract TaskFactory is OrganizationManager {
             }
         } 
         return unassignedTasks;
+    }
+
+    function getContractAddress() public view returns(address contractAddress){
+        return address(this);
     }
 
     ///@notice apply to accept a task
