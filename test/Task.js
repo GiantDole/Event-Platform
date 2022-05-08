@@ -1,4 +1,5 @@
 const Task = artifacts.require("Task");
+// const { assert } = require("console");
 const utils = require("./helpers/utils");
 
 contract("Task", (accounts) => {
@@ -12,9 +13,10 @@ contract("Task", (accounts) => {
         _budgetPerUnit = 1;
         _progressUnits = 4;
         contractInstance = await Task.new( _name, _desc, _idCount, _budgetPerUnit, _progressUnits, {from: owner});
+        await contractInstance.addOrganizer(organizer, {from: owner});
     });
 
-    context( "check that basic organizer functionality is inherited", async () => {
+    xcontext( "check that basic organizer functionality is inherited", async () => {
     // note that organizer functionality is tested seprately in Organizer.js. This is just one simple test to check inheritance.
         it("should set owner (sender) as organizer as well", async () => {
             const ownerIsOrganizer = await contractInstance.isOrganizer(owner);
@@ -24,9 +26,17 @@ contract("Task", (accounts) => {
         })
     })
 
-    xcontext( "check application functionality", async () => {
-        it("check that application leads to applicant being added to applicant list", async () => {
-            await contractInstance.apply(organizer, {from: owner}); 
+    context( "check application functionality", async () => {
+        it("check that applyTo adds sender to applicant list", async () => {
+            await contractInstance.applyTo({from: applicant});
+            const applicants = await contractInstance.viewApplicants({from: owner});
+            let indicator = 0;
+            for( let i=0; i<applicants.length; i++) {
+                if (applicants[i] == applicant) {
+                    indicator++;
+                }
+            }
+            assert.equal(indicator, 1);
         })
     })
 
