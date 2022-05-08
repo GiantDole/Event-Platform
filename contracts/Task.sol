@@ -62,7 +62,7 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
         // variables that are always the same at instantiation
         completedUnits = 0;
         approvedUnits = 0;
-        isAssigned = false;
+        //isAssigned = false;
 
         emit TaskCreated(address(this));
     }
@@ -123,7 +123,7 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
         require(isApplicant[_applicant] == true, "Callable: input address is not an existing applicant and therefore cannot be accepted.");
         approved = _applicant;
 
-        _setup();
+        //_setup();
 
         emit ApplicantAccepted(_applicant);
     }
@@ -132,7 +132,7 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
     ///@dev tasks can only be accepted by approved applicants
     function acceptAssignment() public onlyApproved() { 
         assignment = msg.sender;
-        isAssigned = true;
+        //isAssigned = true;
         emit Assignment(msg.sender);
     }
 
@@ -180,13 +180,13 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
      */
     function updatePaymentPerUnit(uint64 _budgetPerUnit) public onlyOwner {
         budgetPerUnit = _budgetPerUnit;
-        budget = totalunit * newPaymentperunit;
+        //budget = totalunit * newPaymentperunit;
     }
 
     /**
      * @dev Function  to add contract invoice
      */
-    function addInvoice(
+    /**function addInvoice(
         string memory _contractorName,
         //uint256 _invoiceNumber,
         uint256 _numberHours,
@@ -212,13 +212,13 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
             newInvoice.invoiceReleaseDate
         );
         _invoiceNumber++;
-    }       
+    }*/       
 
     /**
      * @dev Function for contractor to withdraw assets if the job is completed.
      */
     // @Adrian: adapt: either completed or just withdraw commited units.
-    function _withdrawOnEntireJobCompletion() public {
+    /**function _withdrawOnEntireJobCompletion() public {
         require(
             msg.sender == contractoraddress,
             "Only the contractor can withdraw the payment."
@@ -230,5 +230,5 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
         }("");
         require(paidContractor, "Payment did not reach contractor");
         emit PaymentReleased(msg.sender, address(this).balance);
-    }
+    }*/
 }
