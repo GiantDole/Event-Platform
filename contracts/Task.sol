@@ -85,6 +85,10 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
         _;
     }
 
+    function isAssigned() public view returns(bool){
+        return approved == address(0) ? false : true;
+    }
+
     ///@notice apply for a task
     function applyTo() public {
         isApplicant[msg.sender] = true;
