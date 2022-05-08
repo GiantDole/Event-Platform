@@ -2,3 +2,5 @@ node_modules
 truffle-config_old.js
 build/contracts
 package-lock.json
+contracts/artifacts
+libraries/artifacts
