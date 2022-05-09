@@ -10,7 +10,7 @@ import "./OrganizationManager.sol";
 contract Task is OrganizationManager { // also probably is Payable or whatever our payments contract is
 
     event TaskCreated(address _contract);
-    //TODO: rename to ApplicationSubmitted?
+    event PaymentDeposited(address _contract, uint _msgvalue, uint _balance);
     event ApplicationCompleted(address _applicant);
     event ApplicationWithdrawn(address _applicant);
     event ApplicantAccepted(address _applicant);
@@ -45,11 +45,11 @@ contract Task is OrganizationManager { // also probably is Payable or whatever o
 
     function depositTotalBudget() public payable {
         require( msg.value >= budgetPerUnit * progressUnits, "Not enough value transferred to cover the task payment specifications.");
-        if (msg.value >= budget) { // if the job creator has put in TOO much budget, return the extra balance to them.
-            (bool paidContractor, ) = payable(msg.sender).call{
-                value: (address(this).balance - budget)
-            }("");
-        }
+        // in case the job creator has put in TOO much budget, return the extra balance to them.
+        (bool paidContractor, ) = payable(msg.sender).call{
+            value: (address(this).balance - budgetPerUnit * progressUnits)
+        }("");
+        emit PaymentDeposited(address(this), msg.value, address(this).balance);
     }
 
     ///@notice constructor to instantiate the contract
