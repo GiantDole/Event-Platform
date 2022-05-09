@@ -43,6 +43,14 @@ contract Task is OrganizationManager { // also probably is Payable or whatever o
     address public approved;
     address public assignment;
 
+    function depositTotalBudget() public payable {
+        require( msg.value >= budgetPerUnit * progressUnits, "Not enough value transferred to cover the task payment specifications.");
+        if (msg.value >= budget) { // if the job creator has put in TOO much budget, return the extra balance to them.
+            (bool paidContractor, ) = payable(msg.sender).call{
+                value: (address(this).balance - budget)
+            }("");
+        }
+    }
 
     ///@notice constructor to instantiate the contract
     constructor(string memory _name, string memory _desc, uint64 _id, uint64 _budgetPerUnit, uint8 _progressUnits) {
@@ -79,6 +87,8 @@ contract Task is OrganizationManager { // also probably is Payable or whatever o
         require(approved == msg.sender, "Callable: caller's application has not been approved");
         _;
     }
+
+    
 
     ///@notice apply for a task
     function applyTo() public {

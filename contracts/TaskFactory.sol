@@ -52,6 +52,7 @@ contract TaskFactory is OrganizationManager {
     function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _progressUnits) public onlyOrganizer() {
         tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits) );
         tasks[idCount].transferOwnership(msg.sender);
+        address(tasks[idCount]).delegatecall(abi.encodeWithSignature("depositTotalBudget()"));
         // organizerTasks[msg.sender].push(idCount);
         /// withhold budgetPerUnit * progressUnits here
         emit TaskPosted(tasks[idCount]);
