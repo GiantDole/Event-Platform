@@ -1,75 +1,196 @@
-//SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.0;
 
-import "../libraries/Ownable.sol";
+//OBJECTIVE
+//1. MONEY IS TAKEN FROM THE OWNER OF THE JOB AND SET INTO THIS CONTRACT
+//2. MONEY CAN ONLY BE WITHDRAWN BY THE CONTRACTOR ON SUCESSFUL COMPLETION OF THE JOB
 
-///@title Owner can manage the organization team with this contract
-///@dev when ownership is transferred, the owner will still be an organizer
-contract OrganizationManager is Ownable {
-    //ddress[] private _organizers;
+/**
+ * Payment follows a pull payment model i.e. payments are not automatically forwarded to the
+ * accounts but kept in this contract, and the actual transfer is triggered as a separate step by calling the withdraw
+ * function.
+ */
+
+import "./Ownable.sol";
+
+contract Payment is Ownable {
+    
+    event PaymentReceived(address from, uint256 amount);
+    event PaymentReleased(address to, uint256 amount);
+    event InvoiceEvent(uint256 _invoiceNumber ;uint256 _numberUnits,uint256 _amount,uint256 _invoiceReleaseDate);
+
+    address public contractorAddress;
+    uint64 public paymentPerUnit;
+    uint64 public unitsCompleted;           // units completed in the contract    
+    uint64 public unitsWithdrawn;           // units withdrawn by the contract 
+    uint64 public totalUnits ;              // total units for the contract
+
+    struct Invoice {
+        uint256 invoiceNumber;
+        uint256 numberUnits;
+        uint256 amount;
+        uint256 invoiceReleaseDate;
+    }
+
+    mapping(uint => Invoice) invoiceRegister ;              // to map the count of the invoice to the invoice. This is saved to storage in case one wants to see previous invoices.
+
+
+    function intiateContract ( address _contractorAddress, uint256 _totalUnits, uint64 _paymentperunit) 
+        public 
+        payable 
+    {
+        contractorAddress   = contractorAddress ;
+        paymentPerUnit      = _paymentperunit ;
+        totalUnits          = _totalUnits ;
+        unitsCompleted      = 0;
+        unitsWithdrawn      = 0;
+    }
+
+    
+    function deposit(uint64 progressUnits)
+        public 
+        payable
+    {
+        budget = progressUnits * paymentPerUnit;
+        require(msg.value >= budget,"Owner should deposit money equal to the budget");
+        (bool paidContractor, ) = payable(msg.sender).call{value: (address(this).balance - budget)}("");    
+        emit PaymentReceived(msg.sender, budget);
+    }
+
     /**
-     * @dev if address maps to 1 that address is an organizer
-     *      if it maps to 0 (standard mapping) that address is not an organizer
-     *    
+     * @dev Getter for the units completed
      */
-    mapping(address => uint) _organizers;
-
-    event OrganizerAdded(address indexed organizer);
-    event OrganizerRemoved(address indexed organizer);
+    function getCompletedUnits() public view returns (uint64) {
+        return unitsCompleted;     
+    }
 
     /**
-     * @dev organizer is already transferred through the constructor of Ownable
-     *      and the overwritten function _transferOwnership
-     *      the implementation makes sure that the owner is also always an organizer
+     * @dev Getter for the units withdrawn
      */
-    constructor() {
-        //_addOrganizer(msg.sender);
+    function getWithdrawnUnits() public view returns (uint64) {
+        return unitsWithdrawn;
     }
-
-    //So far no possibility to view all organizers
-    //function organizers() public view returns(address[] memory) {
-    //    return _organizers;
-    //}
-
-    modifier onlyOrganizer() {
-        require(_organizers[msg.sender] == 1, "Callable: caller is not an organizer");
-        _;
-    }
-
-    function isOrganizer(address _organizer) public view returns(bool) {
-        return _organizers[_organizer] == 1 ? true : false;
-    }
-
 
     /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Overrides and complements ownership transfer in Ownable contract by adding new owner as organizer
-     * This method leaves the old owner as organizer though.
-     * What happens if we call the public transferOwnership function in Ownable?
-     * Will this method be used?
+     * @dev Getter for the units left to be withdrawn
      */
-    function _transferOwnership(address _newOwner) internal override {
-        Ownable._transferOwnership(_newOwner);
-        _addOrganizer(_newOwner);
+    function getUnitsLeftToBeWithdrawn() public view returns (uint64) {
+        return (unitsCompleted - unitsWithdrawn);
     }
 
-    function _addOrganizer(address _organizer) internal {
-        _organizers[_organizer] = 1;
-        emit OrganizerAdded(_organizer);
+    /**
+     * @dev Getter for the completion of the job
+     */
+    // @Adrian: we can leave a potential completed flag - rarely used though
+    function isCompleted() public view returns (bool) {
+        return (unitsCompleted == totalUnits);
     }
 
-    function addOrganizer(address _organizer) public onlyOwner {
-        require(_organizer != address(0), "Organizer can't be the zero address!");
-        _addOrganizer(_organizer);
+    /**
+     * @dev Getter for the contract address associated with a job ID
+     */
+    function getContractAddress() public view returns (address) {
+        return contractorAddress;
     }
 
-    function _removeOrganizer(address _organizer) internal {
-        _organizers[_organizer] = 0;
-        emit OrganizerRemoved(_organizer);
+    /**
+     * @dev Getter for the contract balance
+     */
+    function getContractBalance() 
+        public 
+        view 
+        returns (uint256) 
+    {
+        return address(this).balance;
     }
 
-    function removeOrganizer(address _organizer) public onlyOwner {
-        require(_organizer != msg.sender, "Owner cannot remove itself as Organizer!");
-        _removeOrganizer(_organizer);
+    /**
+     * @dev Getter to update paymentperuint
+     */
+    function updatePaymentPerUnit(uint64 newPaymentperunit)             // you can make this function payable if you want to make payments as per new payment rate for previous work
+        public 
+        onlyOwner
+    {
+        paymentPerUnit = newPaymentperunit;
+    }
+
+    function updateUnitsCompleted(uint64 progressUnits) 
+        public 
+        onlyOwner 
+    {
+        require(unitsCompleted + progressUnits > totalUnits,"Completed units can't be more than total units");
+        require(progressUnits > 0,"Progress in units should be greater than 0");
+        unitsCompleted += progressUnits;
+    }
+
+    /**
+     * @dev Function  to add contract invoice
+     */
+    function addInvoice(uint256 progressUnits, uint256 _invoiceReleaseDate) 
+        public 
+        onlyOwner 
+    {
+        Invoice memory newInvoice;
+        newInvoice.invoiceNumber = invoiceRegister.length + 1 ;
+        newInvoice.numberUnits = progressUnits;
+        newInvoice.amount = progressUnits * paymentPerUnit;
+        newInvoice.invoiceReleaseDate = _invoiceReleaseDate;
+        emit InvoiceEvent(newInvoice.invoiceNumber,newInvoice.numberUnits,newInvoice.amount,newInvoice.invoiceReleaseDate);
+        
+        invoiceRegister[newInvoice.invoiceNumber] = newInvoice ;
+    }
+
+    /**
+     * @dev Getter for invoice of any particular contractor address
+     */
+    function getInvoice(uint256 invoiceNumber)
+        public
+        view
+        onlyOwner
+        returns (Invoice memory)
+    {
+        return invoiceRegister[invoiceNumber];
+    }
+
+    /**
+     * @dev Getter for invoice number of any particular contractor address
+     */
+    function getInvoiceByDate(uint256 _invoiceReleaseDate)
+        public
+        view
+        onlyOwner
+        returns (Invoice memory)
+    {
+        for(int i=0; i++;i<invoiceRegister.length){
+            if(invoiceRegister[i+1].invoiceReleaseDate == _invoiceReleaseDate){
+                return invoiceRegister[i+1].invoiceReleaseDate
+            }
+        }
+        Invoice memory emptyInvoice ;  // if incorrect invoice date provided
+        return emptyInvoice ;
+    }
+
+    /**
+     * @dev Function for contractor to withdraw assets if the job is completed.
+     */
+    function _withdrawOnEntireJobCompletion() 
+        public 
+    {
+        require(msg.sender == contractorAddress,"Only the contractor can withdraw the payment.");
+        require(iscompleted() == true, "Job still not completed");
+        (bool paidContractor, ) = payable(contractorAddress).call{value: address(this).balance}("");
+        require(paidContractor, "Payment did not reach contractor");
+        emit PaymentReleased(msg.sender, address(this).balance);
+    }
+
+    /**
+     * @dev Function for contractor to withdraw assets if the job has been partially completed.
+     */
+    function _withdrawPartially(uint64 unitsRequested) public {
+        require(msg.sender == contractorAddress,"Only the contractor can withdraw the payment.");
+        require((unitsCompleted - unitsWithdrawn) >= unitsRequested,"Can't withdraw for more units than worked done.");
+        (bool paidContractor, ) = payable(contractorAddress).call{value: unitsRequested * paymentperunit }("");
+        require(paidContractor, "Payment did not reach contractor");
+        unitsWithdrawn = unitsWithdrawn + unitsRequested;
+        emit PaymentReleased(msg.sender, unitsRequested * paymentperunit);
     }
 }
