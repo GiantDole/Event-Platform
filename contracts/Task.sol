@@ -99,7 +99,6 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
         require( tasks[_taskId].completedUnits + _addUnits <= tasks[_taskId].totalUnits , "Additional progress units requested are more than the remaining units on the task." );
         require( _addUnits > 0 , "Additional progress units requested should be greater than 0." );
         tasks[_taskId].completedUnits +=  _addUnits;
-        amountDue[_taskId] += tasks[_taskId].budgetPerUnit * _addUnits ;
         emit ProgressApproved(_addUnits, completedUnits, progressUnits);
         if (tasks[_taskId].completedUnits == tasks[_taskId].totalUnits) {
             emit Completion();
