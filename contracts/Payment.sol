@@ -42,7 +42,7 @@ contract Payment is TaskFactory {
 
     function updateBudgetPerUnit(uint _taskId, uint64 newBudgetPerUnit)             // you can make this function payable if you want to make payments as per new payment rate for previous work
         public 
-        onlyTaskOrganizer
+        onlyTaskOrganizer(uint _taskId)
     {
         tasks[_taskId].budgetPerUnit = newBudgetPerUnit;
     }
