@@ -10,19 +10,15 @@ pragma solidity ^0.8.0;
  * function.
  */
 
-import "./OrganizationManager.sol";
+ // Payment has two functionalities -> make payments and generate invoices
 
-contract Payment is OrganizationManager {
+import "./TaskFactory.sol";
+
+contract Payment is TaskFactory {
     
-    event PaymentReceived(address from, uint256 amount);
-    event PaymentReleased(address to, uint256 amount);
-    event InvoiceEvent(uint256 _invoiceNumber ;uint256 _numberUnits,uint256 _amount,uint256 _invoiceReleaseDate);
-
-    address public contractorAddress;
-    uint64 public paymentPerUnit;
-    uint64 public unitsCompleted;           // units completed in the contract    
-    uint64 public unitsWithdrawn;           // units withdrawn by the contract 
-    uint64 public totalUnits ;              // total units for the contract
+    event PaymentReceived(uint taskId, address from, uint256 amount);
+    event PaymentReleased(uint taskId, address to, uint256 amount);
+    event InvoiceEvent(uint taskId, uint256 _invoiceNumber ;uint256 _numberUnits,uint256 _amount,uint256 _invoiceReleaseDate);
 
     struct Invoice {
         uint256 invoiceNumber;
@@ -31,175 +27,116 @@ contract Payment is OrganizationManager {
         uint256 invoiceReleaseDate;
     }
 
-    mapping(uint => Invoice) invoiceRegister ;              // to map the count of the invoice to the invoice. This is saved to storage in case one wants to see previous invoices.
-
-
-    function intiateContract ( address _contractorAddress, uint256 _totalUnits, uint64 _paymentperunit) 
-        public 
-    {
-        contractorAddress   = contractorAddress ;
-        paymentPerUnit      = _paymentperunit ;
-        totalUnits          = _totalUnits ;
-        unitsCompleted      = 0;
-        unitsWithdrawn      = 0;
-    }
+    mapping(uint => Invoice[]) invoiceRegister ;              
 
     
-    function deposit(uint64 progressUnits)
+    function deposit(uint _taskId, uint64 _addUnits)
         public 
         payable
+        onlyTaskOrganizer(uint _taskId)
     {
-        budget = progressUnits * paymentPerUnit;
-        require(msg.value >= budget,"Owner should deposit money equal to the budget");
-        (bool paidContractor, ) = payable(msg.sender).call{value: (address(this).balance - budget)}("");    
-        emit PaymentReceived(msg.sender, budget);
+        budget =  _addUnits * tasks[_tasks].budgetPerUnit ;
+        require(msg.value != budget,"Owner should deposit money in accordance with budget per unit ");
+        emit PaymentReleased(uint _taskId,msg.sender, budget);
     }
 
-    /**
-     * @dev Getter for the units completed
-     */
-    function getCompletedUnits() public view returns (uint64) {
-        return unitsCompleted;     
-    }
-
-    /**
-     * @dev Getter for the units withdrawn
-     */
-    function getWithdrawnUnits() public view returns (uint64) {
-        return unitsWithdrawn;
-    }
-
-    /**
-     * @dev Getter for the units left to be withdrawn
-     */
-    function getUnitsLeftToBeWithdrawn() public view returns (uint64) {
-        return (unitsCompleted - unitsWithdrawn);
-    }
-
-    /**
-     * @dev Getter for the completion of the job
-     */
-    // @Adrian: we can leave a potential completed flag - rarely used though
-    function isCompleted() public view returns (bool) {
-        return (unitsCompleted == totalUnits);
-    }
-
-    /**
-     * @dev Getter for the contract address associated with a job ID
-     */
-    function getContractAddress() public view returns (address) {
-        return contractorAddress;
-    }
-
-    /**
-     * @dev Getter for the contract balance
-     */
-    function getContractBalance() 
+    function updateBudgetPerUnit(uint _taskId, uint64 newBudgetPerUnit)             // you can make this function payable if you want to make payments as per new payment rate for previous work
         public 
-        view 
-        returns (uint256) 
+        onlyTaskOrganizer
     {
-        return address(this).balance;
+        tasks[_taskId].budgetPerUnit = newBudgetPerUnit;
     }
 
     /**
-     * @dev Getter to update paymentperuint
+     * @dev Function for contractor to withdraw assets if the job is completed.
      */
-    function updatePaymentPerUnit(uint64 newPaymentperunit)             // you can make this function payable if you want to make payments as per new payment rate for previous work
+    function withdrawEverything(uint _taskId) 
         public 
-        onlyOwner
+        onlyAssignee(uint _taskId)
     {
-        paymentPerUnit = newPaymentperunit;
+        require(amountDue[taskId] > 0, "No amount left");
+        (bool paidContractor, ) = payable(tasks[_taskId].assignee).call{value: amountDue[_taskId] }("");
+        require(paidContractor, "Payment did not reach contractor");
+        amountDue[_taskId] = 0;
+        emit PaymentReceived(uint _taskId, msg.sender, amountDue[_taskId]);
     }
 
-    function approveUnitsCompleted(uint64 progressUnits) 
-        public 
-        onlyOwner 
+    /**
+     * @dev Function for contractor to withdraw assets if the job has been partially completed.
+     */
+    function withdrawAmount(uint _taskId, uint64 unitsRequested) 
+        public
+        onlyAssignee(uint _taskId) 
     {
-        require(unitsCompleted + progressUnits > totalUnits,"Completed units can't be more than total units");
-        require(progressUnits > 0,"Progress in units should be greater than 0");
-        unitsCompleted += progressUnits;
-    }
-
-    function requestUnitsCompleted(uint64 progressUnits) 
-        public 
-    {
-        
-        require(unitsCompleted + progressUnits > totalUnits,"Completed units can't be more than total units");
-        require(progressUnits > 0,"Progress in units should be greater than 0");
-        unitsCompleted += progressUnits;
+        require(amountDue[_taskId] >= unitsRequested * tasks[_taskId].budgetPerUnit  ,"Can't withdraw for more units than worked done.");
+        (bool paidContractor, ) = payable(tasks[_taskId].assignee).call{value: unitsRequested * tasks[_taskId].budgetPerUnit }("");
+        require(paidContractor, "Payment did not reach contractor");
+        amountDue[_taskId] = amountDue[_taskId] - unitsRequested * tasks[_taskId].budgetPerUnit ;
+        emit PaymentReceived(uint _taskId, msg.sender, unitsRequested * paymentperunit);
     }
 
 
     /**
      * @dev Function  to add contract invoice
      */
-    function addInvoice(uint256 progressUnits, uint256 _invoiceReleaseDate) 
+    function addInvoice(uint _taskId,uint256 _addUnits, uint256 _invoiceReleaseDate) 
         public 
-        onlyOwner 
+        onlyTaskOrganizer(uint _taskId) 
     {
         Invoice memory newInvoice;
-        newInvoice.invoiceNumber = invoiceRegister.length + 1 ;
-        newInvoice.numberUnits = progressUnits;
-        newInvoice.amount = progressUnits * paymentPerUnit;
+        newInvoice.invoiceNumber = invoiceRegister[_taskId].length + 1 ;
+        newInvoice.numberUnits = _addUnits;
+        newInvoice.amount = _addUnits * tasks[_taskId].budgetPerUnit ;
         newInvoice.invoiceReleaseDate = _invoiceReleaseDate;
-        emit InvoiceEvent(newInvoice.invoiceNumber,newInvoice.numberUnits,newInvoice.amount,newInvoice.invoiceReleaseDate);
-        
-        invoiceRegister[newInvoice.invoiceNumber] = newInvoice ;
+        invoiceRegister[_taskId].push(newInvoice) ; 
+        emit InvoiceEvent(uint _taskId, newInvoice.invoiceNumber,newInvoice.numberUnits,newInvoice.amount,newInvoice.invoiceReleaseDate);
     }
 
     /**
      * @dev Getter for invoice of any particular contractor address
      */
-    function getInvoice(uint256 invoiceNumber)
+    function getInvoice(uint _taskId , uint256 _invoiceNumber)
         public
         view
-        onlyOwner
+        onlyAssigneeOrTaskOrganizer(_taskId)
         returns (Invoice memory)
     {
-        return invoiceRegister[invoiceNumber];
+        require(_invoiceNumber >0 && _invoiceNumber <= invoiceRegister[_taskId].length, ,"No invoice for this number exists." ) ;
+        return invoiceRegister[_taskId][_invoiceNumber-1] ;
     }
 
     /**
      * @dev Getter for invoice number of any particular contractor address
      */
-    function getInvoiceByDate(uint256 _invoiceReleaseDate)
+    function getInvoiceByDate(uint _taskId, uint256 _invoiceReleaseDate)
         public
         view
-        onlyOwner
+        onlyAssigneeOrTaskOrganizer(_taskId)
         returns (Invoice memory)
     {
-        for(int i=0; i++;i<invoiceRegister.length){
-            if(invoiceRegister[i+1].invoiceReleaseDate == _invoiceReleaseDate){
-                return invoiceRegister[i+1].invoiceReleaseDate
+        for(int i=0; i++;i<invoiceRegister[_taskId].length){
+            if(invoiceRegister[_taskId][i].invoiceReleaseDate == _invoiceReleaseDate){
+                return invoiceRegister[_taskId][i]  ;
             }
         }
         Invoice memory emptyInvoice ;  // if incorrect invoice date provided
         return emptyInvoice ;
     }
 
-    /**
-     * @dev Function for contractor to withdraw assets if the job is completed.
-     */
-    function _withdrawOnEntireJobCompletion() 
-        public 
-    {
-        require(msg.sender == contractorAddress,"Only the contractor can withdraw the payment.");
-        require(iscompleted() == true, "Job still not completed");
-        (bool paidContractor, ) = payable(contractorAddress).call{value: address(this).balance}("");
-        require(paidContractor, "Payment did not reach contractor");
-        emit PaymentReleased(msg.sender, address(this).balance);
-    }
+    // /**  // Non-essential functionality - One can always look at their invoices
+    //  * @dev Getter for the units withdrawn
+    //  */
+    // function getWithdrawnUnits() public view returns (uint64) {     // it is payment functionality
+    //     return unitsWithdrawn;
+    // }
 
-    /**
-     * @dev Function for contractor to withdraw assets if the job has been partially completed.
-     */
-    function _withdrawPartially(uint64 unitsRequested) public {
-        require(msg.sender == contractorAddress,"Only the contractor can withdraw the payment.");
-        require((unitsCompleted - unitsWithdrawn) >= unitsRequested,"Can't withdraw for more units than worked done.");
-        (bool paidContractor, ) = payable(contractorAddress).call{value: unitsRequested * paymentperunit }("");
-        require(paidContractor, "Payment did not reach contractor");
-        unitsWithdrawn = unitsWithdrawn + unitsRequested;
-        emit PaymentReleased(msg.sender, unitsRequested * paymentperunit);
-    }
+    // /**
+    //  * @dev Getter for the units left to be withdrawn
+    //  */
+    // function getUnitsLeftToBeWithdrawn() public view returns (uint64) {   
+    //     return (unitsCompleted - unitsWithdrawn);
+    // }
+
+
+
 }
