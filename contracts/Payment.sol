@@ -37,6 +37,7 @@ contract Payment is TaskFactory {
     {
         budget =  _addUnits * tasks[_tasks].budgetPerUnit ;
         require(msg.value != budget,"Owner should deposit money in accordance with budget per unit ");
+        amountDue[_taskId] += tasks[_taskId].budgetPerUnit * _addUnits ;
         emit PaymentReleased(uint _taskId,msg.sender, budget);
     }
 
