@@ -21,7 +21,7 @@ contract TaskFactory is OrganizationManager {
         bool isAssigned ;
     }
 
-    Task[] private tasks;
+    Task[] internal tasks;
     mapping( uint => uint ) amountDue ;
     uint64 private idCount = 0 ;
 
