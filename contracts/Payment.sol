@@ -17,21 +17,21 @@ import "./TaskFactory.sol";
 
 contract Payment is TaskFactory {
     
-    event PaymentReceived(uint taskId, address from, uint256 amount);
-    event PaymentReleased(uint taskId, address to, uint256 amount);
-    event InvoiceEvent(uint taskId, uint256 _invoiceNumber ,uint256 _numberUnits,uint256 _amount,uint256 _invoiceReleaseDate);
+    event PaymentReceived(uint taskId, address from, uint amount);
+    event PaymentReleased(uint taskId, address to, uint amount);
+    event InvoiceEvent(uint taskId, uint _invoiceNumber ,uint _numberUnits,uint _amount,uint _invoiceReleaseDate);
 
     struct Invoice {
-        uint256 invoiceNumber;
-        uint256 numberUnits;
-        uint256 amount;
-        uint256 invoiceReleaseDate;
+        uint invoiceNumber;
+        uint numberUnits;
+        uint amount;
+        uint invoiceReleaseDate;
     }
 
     mapping(uint => Invoice[]) invoiceRegister ;              
 
     
-    function deposit(uint _taskId, uint64 _addUnits)
+    function deposit(uint _taskId, uint _addUnits)
         public 
         payable
         onlyTaskOrganizer(_taskId)
@@ -42,7 +42,7 @@ contract Payment is TaskFactory {
         emit PaymentReleased(_taskId,msg.sender, budget);
     }
 
-    function updateBudgetPerUnit(uint _taskId, uint64 newBudgetPerUnit)             // you can make this function payable if you want to make payments as per new payment rate for previous work
+    function updateBudgetPerUnit(uint _taskId, uint newBudgetPerUnit)             // you can make this function payable if you want to make payments as per new payment rate for previous work
         public 
         onlyTaskOrganizer(_taskId)
     {
@@ -66,7 +66,7 @@ contract Payment is TaskFactory {
     /**
      * @dev Function for contractor to withdraw assets if the job has been partially completed.
      */
-    function withdrawAmount(uint _taskId, uint64 unitsRequested) 
+    function withdrawAmount(uint _taskId, uint unitsRequested) 
         public
         onlyAssignee(_taskId) 
     {
@@ -81,7 +81,7 @@ contract Payment is TaskFactory {
     /**
      * @dev Function  to add contract invoice
      */
-    function addInvoice(uint _taskId,uint256 _addUnits, uint256 _invoiceReleaseDate) 
+    function addInvoice(uint _taskId,uint _addUnits, uint _invoiceReleaseDate) 
         public 
         onlyTaskOrganizer(_taskId) 
     {
@@ -97,7 +97,7 @@ contract Payment is TaskFactory {
     /**
      * @dev Getter for invoice of any particular contractor address
      */
-    function getInvoice(uint _taskId , uint256 _invoiceNumber)
+    function getInvoice(uint _taskId , uint _invoiceNumber)
         public
         view
         onlyAssigneeOrTaskOrganizer(_taskId)
@@ -110,7 +110,7 @@ contract Payment is TaskFactory {
     /**
      * @dev Getter for invoice number of any particular contractor address
      */
-    function getInvoiceByDate(uint _taskId, uint256 _invoiceReleaseDate)
+    function getInvoiceByDate(uint _taskId, uint _invoiceReleaseDate)
         public
         view
         onlyAssigneeOrTaskOrganizer(_taskId)
