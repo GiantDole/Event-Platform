@@ -10,14 +10,14 @@ contract TaskFactory is OrganizationManager {
     event TaskPosted(Task _task);                                           
 
     struct Task {
-        string public name;
-        string public desc;          
-        uint64 public id;            
-        uint64 public budgetPerUnit; //rate of the task
-        uint16 public totalUnits;    
-        uint public uintsCompleted ;
-        address public organizer ;
-        address public assignee ;
+        string name;
+        string desc;          
+        uint64 id;            
+        uint64 budgetPerUnit; //rate of the task
+        uint16 totalUnits;    
+        uint uintsCompleted ;
+        address organizer ;
+        address assignee ;
         bool isAssigned ;
     }
 
@@ -46,7 +46,7 @@ contract TaskFactory is OrganizationManager {
         public 
         onlyOrganizer() 
     {
-        tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _totalUnits,0,msg.sender,address(0),false)) ;
+        tasks.push( Task(_name, _desc, idCount, _budgetPerUnit, _totalUnits,0,msg.sender,address(0),false)) ;
         emit TaskPosted(tasks[idCount]);
         idCount++;
     }
@@ -71,9 +71,11 @@ contract TaskFactory is OrganizationManager {
         view returns(Task[] memory _unassignedTasks)
     {
         Task[] memory unassignedTasks ;
+        uint idx = 0 ;
         for (uint i; i < tasks.length; i++) {
             if (tasks[i].isAssigned == false) {
-                unassignedTasks.push(tasks[i]);
+                unassignedTasks[idx] = tasks[i];
+                idx++ ;
             }
         }
         return unassignedTasks;
@@ -84,9 +86,11 @@ contract TaskFactory is OrganizationManager {
         view returns(Task[] memory _organizerTasks)
     {
         Task[] memory organizerTasks ;
+        uint idx = 0 ;
         for (uint i; i < tasks.length; i++) {
             if (tasks[i].organizer == msg.sender) {
-                organizerTasks.push(tasks[i]);
+                organizerTasks[idx] = tasks[i];
+                idx ++ ;
             }
         }
         return organizerTasks;
@@ -97,15 +101,15 @@ contract TaskFactory is OrganizationManager {
         view returns(Task[] memory _workerTasks)
     {
         Task[] memory assigneeTasks ;
+        uint idx = 0;
         for (uint i; i < tasks.length; i++) {
             if (tasks[i].assignee == msg.sender) {
-                assigneeTasks.push(tasks[i]) ;
+                assigneeTasks[idx] =  tasks[i] ;
+                idx ++ ;
             }
         }
 
         return assigneeTasks;
     }
-
-    function getTaskId
 
 }
