@@ -13,13 +13,11 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
     
     event Assignment(address _assignee);
     event RejectAssignment(address _approved);
-    event ProgressRequested(uint16 _addUnits, uint _completedUnits);
-    event ProgressApproved(uint16 _addUnits, uint _completedUnits)  ; 
+    event ProgressRequested(uint _addUnits, uint _completedUnits);
+    event ProgressApproved(uint _addUnits, uint _completedUnits)  ; 
     event Completion();
 
     mapping(uint => address[]) public applicants;                        // list of all applicants for that task   
-    mapping (uint => uint) public amountDeposited ;         // amount deposited for that task. If amount has not been deposited for that task id. One cannot withdraw 
-
 
 
     ///@notice only allow an approved applicant to call the function
@@ -45,7 +43,7 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
     function applyTo(uint _taskId) 
         public 
     {
-        require(isApplicant(_taskId,msg.sender) != -1 ," Callabe: caller has already applied for the task" ) ;
+        require(isApplicant(_taskId,msg.sender) == -1 ," Callabe: caller has already applied for the task" ) ;
         applicants[_taskId].push(msg.sender);
         emit ApplicationCompleted(msg.sender);
     }
@@ -80,12 +78,14 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
     function acceptApplicant(uint _taskId, address _applicant) 
         public 
         onlyTaskOrganizer(_taskId) {
+        require(tasks[_taskId].isAssigned == false, "Someone has already been assigned for the task");
         require(isApplicant(_taskId,_applicant) == -1, "Callable: input address is not an existing applicant and therefore cannot be accepted.");
         tasks[_taskId].assignee = _applicant ;
+        tasks[_taskId].isAssigned = true ;
         emit ApplicantAccepted(_applicant);
     }
 
-    function requestUpdate(uint _taskId, uint8 _addUnits) 
+    function requestUpdate(uint _taskId, uint _addUnits) 
         public 
         onlyAssignee(_taskId) 
     { 
@@ -94,7 +94,7 @@ contract Task is Payment { // also probably is Payable or whatever our payments 
         emit ProgressRequested(_addUnits, tasks[_taskId].uintsCompleted);
     }
 
-    function approveUpdate(uint _taskId, uint8 _addUnits) 
+    function approveUpdate(uint _taskId, uint _addUnits) 
         public 
         onlyTaskOrganizer(_taskId) 
     { 
