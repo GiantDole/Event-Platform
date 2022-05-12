@@ -12,9 +12,9 @@ contract TaskFactory is OrganizationManager {
     struct Task {
         string name;
         string desc;          
-        uint64 id;            
-        uint64 budgetPerUnit; //rate of the task
-        uint16 totalUnits;    
+        uint id;            
+        uint budgetPerUnit; //rate of the task
+        uint totalUnits;    
         uint uintsCompleted ;
         address organizer ;
         address assignee ;
@@ -23,7 +23,7 @@ contract TaskFactory is OrganizationManager {
 
     Task[] internal tasks;
     mapping( uint => uint ) amountDue ;
-    uint64 private idCount = 0 ;
+    uint internal idCount = 0 ;
 
     ///@notice only allow the task assignee to call the function
     modifier onlyAssignee(uint _taskId) {
@@ -42,7 +42,7 @@ contract TaskFactory is OrganizationManager {
     }
 
 
-    function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _totalUnits) 
+    function createTask(string memory _name, string memory _desc, uint _budgetPerUnit, uint _totalUnits) 
         public 
         onlyOrganizer() 
     {
