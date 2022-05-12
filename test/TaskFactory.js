@@ -30,8 +30,8 @@ contract("TaskFactory", (accounts) => {
 
     xcontext("Task Creation: Access Rights", async () => {
         it("should create new task because called by organizer", async () => {
-            await contractInstance.addOrganizer(organizer, {from: owner});
-            const result = await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits,{from: organizer});
+            //await contractInstance.addOrganizer(organizer, {from: owner});
+            const result = await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits,{from: owner});
             //const taskContract = new web3.eth.Contract(Task.abi, ownerTaskAddress)
             const ownerOfTask = await contractInstance.getTaskOwner(0, {from: owner});
             const contractAddress = await contractInstance.getContractAddress();
