@@ -2,6 +2,8 @@ const TaskFactory = artifacts.require("TaskFactory");
 const Task = artifacts.require("Task");
 const utils = require("./helpers/utils");
 var Contract = require('web3-eth-contract');
+const { assert } = require("console");
+//const { assert } = require("console");
 
 Contract.setProvider('ws://localhost:7545');
 
@@ -26,79 +28,43 @@ contract("TaskFactory", (accounts) => {
 
     beforeEach(async () => {
         contractInstance = await TaskFactory.new({from: owner});
+        await contractInstance.addOrganizer(organizer, {from: owner});
     });
 
-    xcontext("Task Creation: Access Rights", async () => {
-        it("should create new task because called by organizer", async () => {
-            //await contractInstance.addOrganizer(organizer, {from: owner});
+    context("Task Creation: Access Rights", async () => {
+        it("should create new task because createTask is called by organizer of the TaskFactory contract", async () => {
             const result = await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits,{from: owner});
-            //const taskContract = new web3.eth.Contract(Task.abi, ownerTaskAddress)
             const ownerOfTask = await contractInstance.getTaskOwner(0, {from: owner});
-            const contractAddress = await contractInstance.getContractAddress();
-    
-            assert(ownerOfTask == contractAddress);
+            assert(ownerOfTask == owner);
         })
-
-        it("should NOT create new task because called by other", async () => {
+        it("should set owner of task to caller of createTask", async () => {
+            const result = await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits,{from: organizer});
+            const ownerOfTask = await contractInstance.getTaskOwner(0, {from: organizer});
+            //const contractAddress = await contractInstance.getContractAddress();
+            assert(ownerOfTask == organizer);
+            assert(ownerOfTask != owner);
+        })
+        it("should NOT create new task because called by other/non-organizer", async () => {
             await utils.shouldThrow(contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits,{from: other}));
         })
-
-        it("should set owner of task to JobFactory address", async () => {
-            const result = await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits,{from: owner});
-            //const taskContract = new web3.eth.Contract(Task.abi, ownerTaskAddress)
-            const ownerOfTask = await contractInstance.getTaskOwner(0, {from: owner});
-            const contractAddress = await contractInstance.getContractAddress();
-    
-            assert(ownerOfTask == contractAddress,"owner of the contract is not Task Factory");
-        })
     })
 
 
 
-    xit("should set owner of task to job creator", async () => {
-        const result = await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits, {from: other});
-        //const taskContract = new web3.eth.Contract(Task.abi, ownerTaskAddress)
-        const ownerOfTask = await contractInstance.getTaskOwner(0, {from: owner});
-        const contractAddress = await contractInstance.getContractAddress();
-
-        assert(ownerOfTask == other);
-    })
 
 
-    xcontext("Task Interaction through TaskFactory", async () => {
-        let addressTask1;
-        let addressTask2;
+    context("Task Retrieval through TaskFactory", async () => {
         beforeEach(async () => {
-            //const result = await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits, {from: owner});
-            //const taskAddress = await result.logs[2].args.from;
-            //var task = await new web3.eth.Contract(Task.abi, taskAddress);
-            //task = TaskContract.at(taskAddress);
-            //task.options.address = taskAddress;
-            await contractInstance.addOrganizer(organizer, {from: owner});
             await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits, {from: owner});
             await contractInstance.createTask(task2.name, task2.desc, task2.budgetPerUnit, task2.progressUnits, {from: organizer});
-            //addressTask1 = contractInstance.getContractAddress(0);
-            //addressTask2 = contractInstance.getContractAddress(1);
         });
 
-        xit("should return all tasks", async () => {
-            const result = contractInstance.viewAllPostings().then(function (value) {
-                console.log(value);
-            });
-            assert(result.length == 2)
-        });
-
-    })
-
-    
-    xcontext("Task Creation: direct assignment", async () => {
-        xit("should create a new task with assigned contractor", async () => {
-
+        it("should return all tasks", async () => {
+            const result = await contractInstance.viewAllPostings();
+            //console.log( result );
+            assert(result.length == 2);
         })
-    })
-
-    xcontext("Job Assigning", async () => {
 
     })
 
-}) 
+})
