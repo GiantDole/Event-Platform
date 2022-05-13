@@ -35,7 +35,7 @@ contract Task is OrganizationManager { // also probably is Payable or whatever o
     // variables that are always set to the same value at instantiation
     uint16 public completedUnits;
     uint16 public approvedUnits; // total units of progress that has been approved by the organizer for payment
-    //uint16 withdrawnUnits; // do we need to keep track of this? believe we do if transfer is not automatic upon progress approval.
+    uint16 withdrawnUnits; // do we need to keep track of this? believe we do if transfer is not automatic upon progress approval.
     bool public isAssigned;
 
     mapping(address=>bool) public isApplicant;
@@ -44,9 +44,10 @@ contract Task is OrganizationManager { // also probably is Payable or whatever o
     address public assignment;
 
 
+
     ///@notice constructor to instantiate the contract
-    constructor(string memory _name, string memory _desc, uint64 _id, uint64 _budgetPerUnit, uint8 _progressUnits) {
-        
+    constructor(string memory _name, string memory _desc, uint64 _id, uint64 _budgetPerUnit, uint8 _progressUnits){
+
         // input variables
         name = _name;
         desc = _desc;
@@ -159,5 +160,16 @@ contract Task is OrganizationManager { // also probably is Payable or whatever o
         }
     }
 
+
+    // @Shashank : including payment function  
+
+    function withdrawAmount(uint16 unitsRequested) 
+        public
+        onlyAssignee() 
+    {
+        require(approvedUnits - withdrawnUnits >= unitsRequested , "Caller : Have not been approved for the requested units") ;
+        (bool paidContractor, ) = payable(msg.sender).call{value: unitsRequested * budgetPerUnit  }("");
+        withdrawnUnits +=  unitsRequested ;
+    }
 
 }
