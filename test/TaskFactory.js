@@ -66,7 +66,7 @@ contract("TaskFactory", (accounts) => {
 
         it("viewOpenPostings should return all unassigned tasks", async () => {
             const result = await contractInstance.viewOpenPostings();
-            console.log( result );
+            //console.log( result );
             assert(result.length == 2);
         })
 
