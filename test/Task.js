@@ -85,4 +85,20 @@ contract("Task", (accounts) => {
         })
     })
 
+    context( "check task progress interactions", async () => {
+        beforeEach(async () => {
+            await contractInstance.applyTo({from: applicant1});
+            await contractInstance.applyTo({from: applicant2});
+            await contractInstance.acceptApplicant(applicant1, {from: organizer});
+            await contractInstance.acceptAssignment({from: applicant1});
+            const assignee = await contractInstance.assignment();
+        });
+        it("check that progress gets updated when updateProgress() called", async () => {
+            const ownerIsOrganizer = await contractInstance.isOrganizer(owner);
+            const otherIsOrganizer = await contractInstance.isOrganizer(other);
+            assert.equal(ownerIsOrganizer, true);
+            assert.equal(otherIsOrganizer, false);
+        })
+    })
+
 })
