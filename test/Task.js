@@ -3,7 +3,7 @@ const Task = artifacts.require("Task");
 const utils = require("./helpers/utils");
 
 contract("Task", (accounts) => {
-    let [owner, other, organizer, assignee, applicant1, applicant2] = accounts;
+    let [owner, other, organizer, applicant1, applicant2, accepted, assignee] = accounts;
 
     let contractInstance;
     beforeEach(async () => {
@@ -63,24 +63,35 @@ contract("Task", (accounts) => {
             const applicants = await contractInstance.viewApplicants({from: organizer});
             assert.equal(applicants.length, 1);
         })
+    })
+
+    context( "check application acceptance and assignment functionality", async () => {
+
+        beforeEach(async () => {
+            await contractInstance.applyTo({from: accepted});
+            await contractInstance.applyTo({from: applicant2});
+            await contractInstance.acceptApplicant(accepted, {from: organizer});
+        });
+        
         it("check that acceptApplicant sets the applicant to approved", async () => {
-            await contractInstance.acceptApplicant(applicant1, {from: organizer});
             const approved = await contractInstance.approved();
-            assert.equal(approved, applicant1);
+            assert.equal(approved, accepted);
+        })
+        it("check that approving another applicant *replaces* the approved address", async () => {
+            await contractInstance.acceptApplicant(applicant2, {from: organizer});
+            const approved = await contractInstance.approved();
+            assert.equal(approved, applicant2);
         })
         it("check that non-organizer CANNOT approve an applicant", async () => {
-            await contractInstance.acceptApplicant(applicant1, {from: organizer});
-            const approved = await contractInstance.approved();
-            assert.equal(approved, applicant1);
+            await utils.shouldThrow(contractInstance.acceptApplicant(applicant2, 
+                {from: applicant2}));
         })
         it("check that approved applicant can accept the assignment", async () => {
-            await contractInstance.acceptApplicant(applicant1, {from: organizer});
-            await contractInstance.acceptAssignment({from: applicant1});
+            await contractInstance.acceptAssignment({from: accepted});
             const assigned = await contractInstance.assignment();
-            assert.equal(assigned, applicant1);
+            assert.equal(assigned, accepted);
         })
         it("check that non-approved applicant CANNOT accept the assignment", async () => {
-            await contractInstance.acceptApplicant(applicant1, {from: organizer});
             await utils.shouldThrow(contractInstance.acceptAssignment({from: applicant2}));
         })
     })
