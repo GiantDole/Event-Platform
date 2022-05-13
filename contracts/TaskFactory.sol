@@ -65,6 +65,11 @@ contract TaskFactory is OrganizationManager {
         return taskDetails;
     }
 
+    //@notice retrieve task details by id
+    function getTaskById(uint64 _id) public view returns(Task _task){
+        return tasks[_id];
+    }
+
     function getTaskOwner(uint64 _id) public view returns(address){
         return tasks[_id].owner();
     }
