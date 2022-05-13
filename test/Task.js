@@ -3,7 +3,7 @@ const Task = artifacts.require("Task");
 const utils = require("./helpers/utils");
 
 contract("Task", (accounts) => {
-    let [owner, other, organizer, applicant1, applicant2] = accounts;
+    let [owner, other, organizer, assignee, applicant1, applicant2] = accounts;
 
     let contractInstance;
     beforeEach(async () => {
@@ -76,8 +76,8 @@ contract("Task", (accounts) => {
         it("check that approved applicant can accept the assignment", async () => {
             await contractInstance.acceptApplicant(applicant1, {from: organizer});
             await contractInstance.acceptAssignment({from: applicant1});
-            const assignee = await contractInstance.assignment();
-            assert.equal(assignee, applicant1);
+            const assigned = await contractInstance.assignment();
+            assert.equal(assigned, applicant1);
         })
         it("check that non-approved applicant CANNOT accept the assignment", async () => {
             await contractInstance.acceptApplicant(applicant1, {from: organizer});
@@ -87,17 +87,33 @@ contract("Task", (accounts) => {
 
     context( "check task progress interactions", async () => {
         beforeEach(async () => {
-            await contractInstance.applyTo({from: applicant1});
-            await contractInstance.applyTo({from: applicant2});
-            await contractInstance.acceptApplicant(applicant1, {from: organizer});
-            await contractInstance.acceptAssignment({from: applicant1});
-            const assignee = await contractInstance.assignment();
+            await contractInstance.applyTo({from: assignee});
+            await contractInstance.acceptApplicant(assignee, {from: organizer});
+            await contractInstance.acceptAssignment({from: assignee});
         });
-        it("check that progress gets updated when updateProgress() called", async () => {
-            const ownerIsOrganizer = await contractInstance.isOrganizer(owner);
-            const otherIsOrganizer = await contractInstance.isOrganizer(other);
-            assert.equal(ownerIsOrganizer, true);
-            assert.equal(otherIsOrganizer, false);
+        it("check that progress gets updated when updateProgress() called by assignee", async () => {
+            assert.equal(contractInstance.completedUnits() == 0);
+            await contractInstance.updateProgress(1, {from: assignee});
+            assert.equal(contractInstance.completedUnits() == 1);
+        })
+        it("check that progress remains unapproved until organizer approves it", async () => {
+            await contractInstance.updateProgress(1, {from: assignee});
+            assert.equal(contractInstance.approvedUnits() == 0);
+            await contractInstance.approveProgress({from: organizer});
+            assert.equal(contractInstance.approvedUnits() == 1);
+        })
+        it("check that progress CANNOT be updated by non-organizer or non-assignee", async () => {
+            utils.shouldThrow(contractInstance.updateProgress({from: other}));
+        })
+        it("check that progress gets updated AND approved when updateProgress() called by organizer", async () => {
+            await contractInstance.updateProgress(1, {from: organizer});
+            assert.equal(contractInstance.completedUnits() == 1);
+            assert.equal(contractInstance.approvedUnits() == 1);
+        })
+        it("check that progress CANNOT be approved by non-organizer", async () => {
+            await contractInstance.updateProgress(1, {from: assignee});
+            utils.shouldThrow(contractInstance.approveProgress({from: other}));
+            utils.shouldThrow(contractInstance.approveProgress({from: assignee}));
         })
     })
 
