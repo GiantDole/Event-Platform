@@ -31,6 +31,8 @@ contract("TaskFactory", (accounts) => {
         await contractInstance.addOrganizer(organizer, {from: owner});
     });
 
+
+
     context("Task Creation: Access Rights", async () => {
         it("should create new task because createTask is called by organizer of the TaskFactory contract", async () => {
             const result = await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits,{from: owner});
@@ -50,9 +52,6 @@ contract("TaskFactory", (accounts) => {
     })
 
 
-
-
-
     context("Task Retrieval through TaskFactory", async () => {
         beforeEach(async () => {
             await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits, {from: owner});
@@ -65,10 +64,28 @@ contract("TaskFactory", (accounts) => {
             assert(result.length == 2);
         })
 
-        it("viewOpenPostings should return all tasks", async () => {
-            const result = await contractInstance.viewAllPostings();
-            //console.log( result );
+        it("viewOpenPostings should return all unassigned tasks", async () => {
+            const result = await contractInstance.viewOpenPostings();
+            console.log( result );
             assert(result.length == 2);
+        })
+
+        it("viewOrganizerTask called by owner should return only owner's tasks", async () => {
+            const result = await contractInstance.viewOrganizerTasks({from: owner});
+            //console.log( result );
+            assert(result.length == 1);
+        })
+
+        it("viewOrganizerTask called by organizer should return only organizer's tasks", async () => {
+            const result = await contractInstance.viewOrganizerTasks({from: organizer});
+            //console.log( result );
+            assert(result.length == 1);
+        })
+
+        it("viewWorkerTasks called by worker should return only tasks assigned to worker", async () => {
+            const result = await contractInstance.viewWorkerTasks();
+            //console.log( result );
+            assert(result.length == 0);
         })
 
     })
