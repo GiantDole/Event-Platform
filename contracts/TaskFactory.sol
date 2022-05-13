@@ -84,12 +84,12 @@ contract TaskFactory is OrganizationManager {
         TaskDetails[] memory filtArr = new TaskDetails[](tasks.length);
         uint64 currId = 0;
         for (uint64 i; i < tasks.length; i++) {
-            if (tasks[i].isAssigned()) {
+            if (!tasks[i].isAssigned()) {
                 filtArr[currId] = getTaskDetailsById(i);
                 currId++;
             }
         }
-        TaskDetails[] memory unassignedTaskDetails = new TaskDetails[](currId+1);
+        TaskDetails[] memory unassignedTaskDetails = new TaskDetails[](currId);
         for (uint64 j = 0; j < unassignedTaskDetails.length; j++) {
             unassignedTaskDetails[j] = filtArr[j];
         }      
