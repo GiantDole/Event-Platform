@@ -81,7 +81,7 @@ contract("Task", (accounts) => {
         })
         it("check that non-approved applicant CANNOT accept the assignment", async () => {
             await contractInstance.acceptApplicant(applicant1, {from: organizer});
-            utils.shouldThrow(contractInstance.acceptAssignment({from: applicant2}));
+            await utils.shouldThrow(contractInstance.acceptAssignment({from: applicant2}));
         })
     })
 
@@ -92,28 +92,30 @@ contract("Task", (accounts) => {
             await contractInstance.acceptAssignment({from: assignee});
         });
         it("check that progress gets updated when updateProgress() called by assignee", async () => {
-            assert.equal(contractInstance.completedUnits() == 0);
+            const before = await contractInstance.completedUnits();
             await contractInstance.updateProgress(1, {from: assignee});
-            assert.equal(contractInstance.completedUnits() == 1);
+            const after = await contractInstance.completedUnits();
+            assert.equal(before, 0);
+            assert.equal(after, 1);
         })
         it("check that progress remains unapproved until organizer approves it", async () => {
             await contractInstance.updateProgress(1, {from: assignee});
-            assert.equal(contractInstance.approvedUnits() == 0);
+            assert.equal(await contractInstance.approvedUnits(), 0);
             await contractInstance.approveProgress({from: organizer});
-            assert.equal(contractInstance.approvedUnits() == 1);
+            assert.equal(await contractInstance.approvedUnits(), 1);
         })
         it("check that progress CANNOT be updated by non-organizer or non-assignee", async () => {
-            utils.shouldThrow(contractInstance.updateProgress({from: other}));
+            await utils.shouldThrow(contractInstance.updateProgress({from: other}));
         })
         it("check that progress gets updated AND approved when updateProgress() called by organizer", async () => {
             await contractInstance.updateProgress(1, {from: organizer});
-            assert.equal(contractInstance.completedUnits() == 1);
-            assert.equal(contractInstance.approvedUnits() == 1);
+            assert.equal(await contractInstance.completedUnits(), 1);
+            assert.equal(await contractInstance.approvedUnits(), 1);
         })
         it("check that progress CANNOT be approved by non-organizer", async () => {
             await contractInstance.updateProgress(1, {from: assignee});
-            utils.shouldThrow(contractInstance.approveProgress({from: other}));
-            utils.shouldThrow(contractInstance.approveProgress({from: assignee}));
+            await utils.shouldThrow(contractInstance.approveProgress({from: other}));
+            await utils.shouldThrow(contractInstance.approveProgress({from: assignee}));
         })
     })
 
