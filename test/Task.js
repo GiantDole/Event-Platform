@@ -3,7 +3,7 @@ const Task = artifacts.require("Task");
 const utils = require("./helpers/utils");
 
 contract("Task", (accounts) => {
-    let [owner, other, organizer, assignee, approved, applicant] = accounts;
+    let [owner, other, organizer, applicant1, applicant2] = accounts;
 
     let contractInstance;
     beforeEach(async () => {
@@ -16,7 +16,7 @@ contract("Task", (accounts) => {
         await contractInstance.addOrganizer(organizer, {from: owner});
     });
 
-    xcontext( "check that basic organizer functionality is inherited", async () => {
+    context( "check that basic organizer functionality is inherited", async () => {
     // note that organizer functionality is tested seprately in Organizer.js. This is just one simple test to check inheritance.
         it("should set owner (sender) as organizer as well", async () => {
             const ownerIsOrganizer = await contractInstance.isOrganizer(owner);
@@ -27,70 +27,61 @@ contract("Task", (accounts) => {
     })
 
     context( "check application functionality", async () => {
-        it("check that applyTo adds sender to applicant list", async () => {
-            await contractInstance.applyTo({from: applicant});
+
+        beforeEach(async () => {
+            await contractInstance.applyTo({from: applicant1});
+            await contractInstance.applyTo({from: applicant2});
+        });
+
+        it("check that applyTo adds sender to applicant list", async () => {  
             const applicants = await contractInstance.viewApplicants({from: owner});
-            let indicator = 0;
-            for( let i=0; i<applicants.length; i++) {
-                if (applicants[i] == applicant) {
-                    indicator++;
-                }
-            }
-            assert.equal(indicator, 1);
+            assert.equal( applicants.length, 2);
+            // let indicator = 0;
+            // for( let i=0; i<applicants.length; i++) {
+            //     if (applicants[i] == applicant1) {
+            //         indicator++;
+            //     }
+            // }
+            // assert.equal(indicator, 2);
         })
-    })
-
-    xcontext("adding an organizer", async () => {
-        it("should add an organizer: called by owner", async () => {
-            await contractInstance.addOrganizer(organizer, {from: owner});
-            const isOrganizer = await contractInstance.isOrganizer(organizer);
-            assert.equal(isOrganizer, true);
+        it("check that owner can view applicants", async () => {
+            const applicants = await contractInstance.viewApplicants({from: owner});
+            assert.equal(applicants.length, 2);
         })
-
-        it("should not add an organizer: called by another organizer", async() => {
-            await contractInstance.addOrganizer(organizer, {from: owner});
-            await utils.shouldThrow(contractInstance.addOrganizer(other, {from: organizer}));
+        it("check that organizer can view applicants", async () => {
+            const applicants = await contractInstance.viewApplicants({from: organizer});
+            assert.equal(applicants.length, 2);
         })
-    })
-
-    xcontext("changing owner", async () => {
-        it("should transfer ownership and add the new owner as organizer", async() => {
-            assert.equal(await contractInstance.owner(), owner);
-            await contractInstance.transferOwnership(organizer, {from: owner});
-            const isOrganizer = await contractInstance.isOrganizer(organizer);
-            assert.equal(isOrganizer, true);
-            assert.equal(await contractInstance.owner(), organizer);
+        it("check that non-organizer CANNOT view applicants", async () => {
+            await utils.shouldThrow(contractInstance.viewApplicants({from: other}));
         })
-
-        it("should not transfer ownership: called by another organizer", async() => {
-            await contractInstance.addOrganizer(organizer, {from: owner});
-            assert.equal(await contractInstance.isOrganizer(organizer), true);
-            await utils.shouldThrow(contractInstance.transferOwnership(other, {from: organizer}));
+        it("check that applicants cannot view other applicants", async () => {
+            await utils.shouldThrow(contractInstance.viewApplicants({from: applicant1}));
         })
-    })
-
-    xcontext("removing organizers", async () => {
-        it("should successfully remove an organizer: called by owner", async() => {
-            await contractInstance.addOrganizer(organizer, {from: owner});
-            assert.equal(await contractInstance.isOrganizer(organizer), true);
-            await contractInstance.removeOrganizer(organizer, {from: owner});
-            assert.equal(await contractInstance.isOrganizer(organizer), false);
+        it("check that withdrawApplication removes the applicant from the list", async () => {
+            await contractInstance.withdrawApplication({from: applicant1});
+            const applicants = await contractInstance.viewApplicants({from: organizer});
+            assert.equal(applicants.length, 1);
         })
-
-        it("should not remove organizer: not called by owner", async() => {
-            await contractInstance.addOrganizer(organizer, {from: owner});
-            await contractInstance.addOrganizer(other, {from: owner});
-            assert.equal(await contractInstance.isOrganizer(organizer), true);
-            assert.equal(await contractInstance.isOrganizer(other), true);
-            await utils.shouldThrow(contractInstance.removeOrganizer(organizer, {from: other}));
+        it("check that acceptApplicant sets the applicant to approved", async () => {
+            await contractInstance.acceptApplicant(applicant1, {from: organizer});
+            const approved = await contractInstance.approved();
+            assert.equal(approved, applicant1);
         })
-
-        it("should not remove organizer: is owner", async() => {
-            await contractInstance.addOrganizer(organizer, {from: owner});
-            await contractInstance.addOrganizer(other, {from: owner});
-            assert.equal(await contractInstance.isOrganizer(organizer), true);
-            assert.equal(await contractInstance.isOrganizer(other), true);
-            await utils.shouldThrow(contractInstance.removeOrganizer(owner, {from: owner}));
+        it("check that non-organizer CANNOT approve an applicant", async () => {
+            await contractInstance.acceptApplicant(applicant1, {from: organizer});
+            const approved = await contractInstance.approved();
+            assert.equal(approved, applicant1);
+        })
+        it("check that approved applicant can accept the assignment", async () => {
+            await contractInstance.acceptApplicant(applicant1, {from: organizer});
+            await contractInstance.acceptAssignment({from: applicant1});
+            const assignee = await contractInstance.assignment();
+            assert.equal(assignee, applicant1);
+        })
+        it("check that non-approved applicant CANNOT accept the assignment", async () => {
+            await contractInstance.acceptApplicant(applicant1, {from: organizer});
+            utils.shouldThrow(contractInstance.acceptAssignment({from: applicant2}));
         })
     })
 
