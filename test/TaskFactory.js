@@ -8,7 +8,7 @@ const { assert } = require("console");
 Contract.setProvider('ws://localhost:7545');
 
 contract("TaskFactory", (accounts) => {
-    let [owner, organizer, taskowner, other, applicantone, applicanttwo] = accounts;
+    let [owner, organizer, other, contractor1, contractor2] = accounts;
 
     let contractInstance;
 
@@ -52,7 +52,7 @@ contract("TaskFactory", (accounts) => {
     })
 
 
-    context("Task Retrieval through TaskFactory", async () => {
+    context("Task Retrieval through TaskFactory: before assignment", async () => {
         beforeEach(async () => {
             await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits, {from: owner});
             await contractInstance.createTask(task2.name, task2.desc, task2.budgetPerUnit, task2.progressUnits, {from: organizer});
@@ -82,10 +82,56 @@ contract("TaskFactory", (accounts) => {
             assert(result.length == 1);
         })
 
-        it("viewWorkerTasks called by worker should return only tasks assigned to worker", async () => {
+        it("viewWorkerTasks called by worker should return empty before assignment", async () => {
             const result = await contractInstance.viewWorkerTasks();
             //console.log( result );
             assert(result.length == 0);
+        })
+
+    })
+
+    context("Task Retrieval through TaskFactory: after assignment", async () => {
+        beforeEach(async () => {
+            await contractInstance.createTask(task1.name, task1.desc, task1.budgetPerUnit, task1.progressUnits, {from: owner});
+            await contractInstance.createTask(task2.name, task2.desc, task2.budgetPerUnit, task2.progressUnits, {from: owner});
+            
+            let taskAddress1 = await contractInstance.getTaskById(0);
+            let taskInstance1 = await Task.at(taskAddress1);
+            await taskInstance1.applyTo({from: contractor1});
+            await taskInstance1.acceptApplicant(contractor1, {from: owner});
+            await taskInstance1.acceptAssignment({from: contractor1});
+            await taskInstance1.updateProgress(task1.progressUnits, {from: owner});
+        
+        });
+
+        it("viewAllPostings should return all tasks", async () => {
+            const result = await contractInstance.viewAllPostings();
+            //console.log( result );
+            assert(result.length == 2);
+        })
+
+        it("viewOpenPostings should return all unassigned tasks", async () => {
+            const result = await contractInstance.viewOpenPostings();
+            //console.log( result );
+            assert(result.length == 1);
+        })
+
+        it("viewOrganizerTask called by owner should return only owner's tasks", async () => {
+            const result = await contractInstance.viewOrganizerTasks({from: owner});
+            //console.log( result );
+            assert(result.length == 2);
+        })
+
+        it("viewWorkerTasks called by worker should return tasks assigned to worker", async () => {
+            const result = await contractInstance.viewWorkerTasks({from: contractor1});
+            //console.log( result );
+            assert(result.length == 1);
+        })
+
+        it("viewWorkerTasks called by worker should not return tasks that are not assigned to worker", async () => {
+            const result = await contractInstance.viewWorkerTasks({from: contractor2});
+            //console.log( result );
+            assert(result.length == 1);
         })
 
     })
