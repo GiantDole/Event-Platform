@@ -15,14 +15,14 @@ contract("TaskFactory", (accounts) => {
     const task1 = {
         "name": "task1",
         "desc": "This is Task1!",
-        "budgetPerUnit": 5,
+        "budgetPerUnit": 0,
         "progressUnits": 10
     }
     
     const task2 = {
         "name": "task2",
         "desc": "This is Task2!",
-        "budgetPerUnit": 100,
+        "budgetPerUnit": 0,
         "progressUnits": 2
     }
 
@@ -59,7 +59,13 @@ contract("TaskFactory", (accounts) => {
             await contractInstance.createTask(task2.name, task2.desc, task2.budgetPerUnit, task2.progressUnits, {from: organizer});
         });
 
-        it("should return all tasks", async () => {
+        it("viewAllPostings should return all tasks", async () => {
+            const result = await contractInstance.viewAllPostings();
+            //console.log( result );
+            assert(result.length == 2);
+        })
+
+        it("viewOpenPostings should return all tasks", async () => {
             const result = await contractInstance.viewAllPostings();
             //console.log( result );
             assert(result.length == 2);
