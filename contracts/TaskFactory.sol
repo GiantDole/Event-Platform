@@ -10,21 +10,12 @@ import "./Task.sol";
 contract TaskFactory is OrganizationManager { 
  
     event TaskPosted(Task _task);
-    event TaskApplicationCompleted(uint taskId, address applicant);
-    event TaskApplicationWithdrawn(uint taskId, address applicant);
-    event TaskApplicantAccepted(uint taskId, address applicant);
-    event TaskAssigned(uint taskId, address assignee);
-    // event ProgressUpdated();
-    // event ProgressApproved();
-    event TaskCompleted();
 
     uint64 private idCount;
 
     ///@notice constructor to instantiate the contract
     ///@dev for now, all we have to do is set idCount to 0
     constructor() {
-        // @Adrian: wouldn't id be implicitly managed through array position?
-        // @Hannah: yes, we can probably just manage ids through array push. but leaving it for now.
         idCount=0;
     }
 
@@ -42,23 +33,6 @@ contract TaskFactory is OrganizationManager {
         uint16 approvedUnits; // total units of progress that has been approved by the organizer for payment
         bool isAssigned;
     }
-    
-    // I don't actually think the below are needed -- use mappings to bool instead as we can loop through tasks array in a public view function that doesn't require gas.
-    // uint64[] completedTasks; // array to store past tasks that are already completed (e.g. for tax purposes, etc.)
-    // uint64[] ongoingTasks; // array to store ongoing tasks that are currently assigned
-    // uint64[] unassignedTasks; // array to store posted tasks that are unassigned, i.e. in need of assignment
-    // uint64[] assignedTasks; // array to store posted tasks that are unassigned, i.e. in need of assignment
-
-    // @Adrian: can't these information be held by a task contract? As we create them anyway that might be more memory efficient
-    // @Hannah: we may not need these in the end but leaving the ones I'm not positive we DON"T need here for now.
-    // mapping(uint64=>bool) isAssigned;
-    // mapping(uint64=>bool) isComplete;
-    // mapping(uint64=>address) internal assignment; // maps task id to a SINGLE assignee
-
-    // @Adrian: this belongs here; managing tasks!
-    //mapping (address => uint64[]) organizerTasks; // maps organizer address to tasks that they are an organizer of
-    //mapping (address => uint64[]) workerTasks; // maps worker address to tasks that they are/were assigned to
-
     ///@notice creates a new task posting
     ///@dev tasks can only be created by an organizer
     ///@dev incrementing idCount depends on overflow protection; only use with Solidity verions >0.8!
