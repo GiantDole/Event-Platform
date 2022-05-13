@@ -62,14 +62,23 @@ contract TaskFactory is OrganizationManager {
     ///@notice creates a new task posting
     ///@dev tasks can only be created by an organizer
     ///@dev incrementing idCount depends on overflow protection; only use with Solidity verions >0.8!
-    function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _progressUnits) public onlyOrganizer() returns(uint64 _taskId){
-        tasks.push( new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits) );
+    function createTask(string memory _name, string memory _desc, uint64 _budgetPerUnit, uint8 _progressUnits) 
+        public 
+        onlyOrganizer()
+        payable 
+    {
+        require(msg.value >= _budgetPerUnit*_progressUnits,"Caller : Insufficent fund transferred") ;
+        Task newContract = new Task(_name, _desc, idCount, _budgetPerUnit, _progressUnits) ;
+
+        (bool paidContract,) = payable(address(newContract)).call{value: _budgetPerUnit*_progressUnits }("");
+        (bool repaidOrganizer,)= payable(address(msg.sender)).call{value: msg.value - _budgetPerUnit*_progressUnits }("");
+
+        tasks.push( newContract );
         tasks[idCount].transferOwnership(msg.sender);
         // organizerTasks[msg.sender].push(idCount);
         /// withhold budgetPerUnit * progressUnits here
         emit TaskPosted(tasks[idCount]);
         idCount++;
-        return idCount-1;
     }
 
     //@notice retrieve task details by id
@@ -152,6 +161,9 @@ contract TaskFactory is OrganizationManager {
     function getContractAddress() public view returns(address contractAddress){
         return address(this);
     }
+
+
+
 
     ///@notice apply to accept a task
     // function applyToTask(uint64 _id) public {
