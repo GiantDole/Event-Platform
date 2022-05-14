@@ -56,6 +56,7 @@ contract TaskFactory is OrganizationManager {
     }
 
     //@notice retrieve task details by id
+    ///@dev public view function, doesn't cost gas
     function getTaskDetailsById(uint64 _id) public view returns(TaskDetails memory _taskDetails){
         TaskDetails memory taskDetails = TaskDetails( 
             tasks[_id].name(), tasks[_id].desc(), tasks[_id].id(), 
@@ -65,7 +66,8 @@ contract TaskFactory is OrganizationManager {
         return taskDetails;
     }
 
-    //@notice retrieve task details by id
+    //@notice retrieve task contract by id
+    ///@dev public view function, doesn't cost gas
     function getTaskById(uint64 _id) public view returns(Task _task){
         return tasks[_id];
     }
@@ -75,6 +77,7 @@ contract TaskFactory is OrganizationManager {
     }
 
     ///@notice view ALL task postings, past and present
+    ///@dev public view function, doesn't cost gas
     function viewAllPostings() public view returns(TaskDetails[] memory _taskDetailsArr){
         TaskDetails[] memory taskDetailsArr = new TaskDetails[](tasks.length);
         for (uint64 i; i < tasks.length; i++) {
@@ -84,7 +87,7 @@ contract TaskFactory is OrganizationManager {
     }
 
     ///@notice view open postings that have not been assigned yet
-    ///@dev SHOULD THIS JUST BE DONE ON FRONT-END? I THINK MAYBE!!!
+    ///@dev public view function, doesn't cost gas
     function viewOpenPostings() public view returns(TaskDetails[] memory _unassignedTaskDetails){
         TaskDetails[] memory filtArr = new TaskDetails[](tasks.length);
         uint64 currId = 0;
@@ -102,7 +105,7 @@ contract TaskFactory is OrganizationManager {
     }
 
     ///@notice view organizer tasks
-    ///@dev SHOULD THIS JUST BE DONE ON FRONT-END? I THINK MAYBE!!!
+    ///@dev public view function, doesn't cost gas
     function viewOrganizerTasks() public view returns(TaskDetails[] memory _organizerTaskDetails){
         TaskDetails[] memory filtArr = new TaskDetails[](tasks.length);
         uint64 currId = 0;
@@ -120,6 +123,7 @@ contract TaskFactory is OrganizationManager {
     }
 
     ///@notice view worker tasks
+    ///@dev public view function, doesn't cost gas
     function viewWorkerTasks() public view returns(TaskDetails[] memory _workerTaskDetails){
         TaskDetails[] memory filtArr = new TaskDetails[](tasks.length);
         uint64 currId = 0;
