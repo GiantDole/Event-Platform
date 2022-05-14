@@ -1,7 +1,6 @@
 # Incentive System
 **Description**: Job platform to post jobs, review applications, accept jobs, and acknowledge job progress. It helps organizers of an event to keep track of tasks and find the most experienced person to fulfill it. Implementing such a system on the blockchain allows for dynamic assignment and organization of resources while efficiently keeping track of them.
 
-4cb6bae5094525c1a73899ec85876e79331598ab3833f413bf1e8db806ddd442
 
 **Components**: 
 - *JobFactory*: manages and creates jobs
