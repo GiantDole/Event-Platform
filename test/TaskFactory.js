@@ -131,7 +131,7 @@ contract("TaskFactory", (accounts) => {
         it("viewWorkerTasks called by worker should not return tasks that are not assigned to worker", async () => {
             const result = await contractInstance.viewWorkerTasks({from: contractor2});
             //console.log( result );
-            assert(result.length == 1);
+            assert(result.length == 0);
         })
 
     })
