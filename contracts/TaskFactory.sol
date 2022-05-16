@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.13;
 
 import "./OrganizationManager.sol";
 import "./Task.sol";
@@ -9,7 +9,7 @@ import "./Task.sol";
 ///@title Collection and creation of all task postings
 contract TaskFactory is OrganizationManager { 
  
-    event TaskPosted(Task _task);
+    event TaskPosted(uint taskId);
     event TaskApplicationCompleted(uint taskId, address applicant);
     event TaskApplicationWithdrawn(uint taskId, address applicant);
     event TaskApplicantAccepted(uint taskId, address applicant);
@@ -23,28 +23,10 @@ contract TaskFactory is OrganizationManager {
     ///@notice constructor to instantiate the contract
     ///@dev for now, all we have to do is set idCount to 0
     constructor() {
-        // @Adrian: wouldn't id be implicitly managed through array position?
-        // @Hannah: yes, we can probably just manage ids through array push. but leaving it for now.
         idCount=0;
     }
 
     Task[] private tasks;
-    
-    // I don't actually think the below are needed -- use mappings to bool instead as we can loop through tasks array in a public view function that doesn't require gas.
-    // uint64[] completedTasks; // array to store past tasks that are already completed (e.g. for tax purposes, etc.)
-    // uint64[] ongoingTasks; // array to store ongoing tasks that are currently assigned
-    // uint64[] unassignedTasks; // array to store posted tasks that are unassigned, i.e. in need of assignment
-    // uint64[] assignedTasks; // array to store posted tasks that are unassigned, i.e. in need of assignment
-
-    // @Adrian: can't these information be held by a task contract? As we create them anyway that might be more memory efficient
-    // @Hannah: we may not need these in the end but leaving the ones I'm not positive we DON"T need here for now.
-    // mapping(uint64=>bool) isAssigned;
-    // mapping(uint64=>bool) isComplete;
-    // mapping(uint64=>address) internal assignment; // maps task id to a SINGLE assignee
-
-    // @Adrian: this belongs here; managing tasks!
-    //mapping (address => uint64[]) organizerTasks; // maps organizer address to tasks that they are an organizer of
-    //mapping (address => uint64[]) workerTasks; // maps worker address to tasks that they are/were assigned to
 
     ///@notice creates a new task posting
     ///@dev tasks can only be created by an organizer
@@ -54,7 +36,7 @@ contract TaskFactory is OrganizationManager {
         tasks[idCount].transferOwnership(msg.sender);
         // organizerTasks[msg.sender].push(idCount);
         /// withhold budgetPerUnit * progressUnits here
-        emit TaskPosted(tasks[idCount]);
+        emit TaskPosted(idCount);
         idCount++;
     }
 

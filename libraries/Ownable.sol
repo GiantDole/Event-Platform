@@ -27,6 +27,7 @@ abstract contract Ownable is Context {
      */
     constructor() {
         _transferOwnership(_msgSender());
+        //_transferOwnership(sender);
     }
 
     /**
