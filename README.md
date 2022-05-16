@@ -1,5 +1,5 @@
 # Web3Connects Freelancer Employment Platform
-**Description**: Freelancing employment platform for employers to post jobs ("tasks"), for freelancers to apply to jobs/tasks, employers to review applications and accept an applicant for a job, and for employers and contractors alike to acknowledge job progress and exchange payment. Our immediate goal is to use such a platform to allow organizers of an event to keep track of tasks and find the most experienced person to fulfill each task that is needed, and pay them for their service. Implementing such a system on the blockchain allows for dynamic assignment and organization of resources and efficient tracking of all work and payments.
+**Description**: Freelancing employment platform for employers to post jobs ("tasks"), for freelancers to apply to jobs/tasks, employers to review applications and accept an applicant for a job, and for employers and contractors alike to acknowledge job progress and exchange payment. Our immediate goal is to use such a platform to allow organizers of an event to keep track of tasks and find the most experienced person to fulfill each task that is needed, and pay them for their service. Implementing such a system on the blockchain allows for dynamic, decentralized assignment and organization of resources and efficient tracking of all work and payments.
 
 
 **Contract Types**: 
@@ -46,5 +46,36 @@ getTaskDetailsById(uint64 _id) public view returns(TaskDetails memory _taskDetai
    * isOrganizer(address _organizer) public view returns(bool): return Boolean indicator of whether the input address is an organizer
    * addOrganizer(address _organizer) public onlyOwner: add an organizer of the contract
    * removeOrganizer(address _organizer) public onlyOwner: remove an organizer from the contract
+
+
+**Contract function modifiers:**
+* **TaskFactory modifiers**:
+   * OrganizationManager modifiers (by inheritance)
+* **Task modifiers**:
+   * modifier onlyAssignee(): require caller to be the task assignee
+   * modifier onlyAssigneeOrOrganizer(): require caller to be either the task assignee or an organizer of the task
+   * modifier onlyApproved(): require caller to be an approved applicant
+   * OrganizationManager modifiers (by inheritance)
+* **OrganizationManager modifiers**:
+   * modifier onlyOrganizer(): require caller to be an organizer
+
+
+**Contract events:**
+* **TaskFactory events**:
+   * event TaskPosted(Task _task)
+* **Task events**:
+   * event TaskCreated(address _contract)
+   * event ApplicationCompleted(address _applicant)
+   * event ApplicationWithdrawn(address _applicant)
+   * event ApplicantAccepted(address _applicant)
+   * event Assignment(address _assignee)
+   * event ProgressUpdated(uint16 _addUnits, uint16 _completedUnits, uint16 _progressUnits)
+   * event ProgressApproved(uint16 _addUnits, uint16 _completedUnits, uint16 _progressUnits)
+   * event Completion()
+* **OrganizationManager events**:
+   * event OrganizerAdded(address indexed organizer)
+   * event OrganizerRemoved(address indexed organizer)
+
+
 
 
